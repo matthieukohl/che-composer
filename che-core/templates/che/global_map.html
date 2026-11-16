@@ -1,0 +1,54 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CHE Composer — Global Event Map</title>
+    <link rel="stylesheet" href="{% static 'capeditor/css/maplibre-gl.css' %}">
+    <style>
+        :root { color-scheme: light; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f7f9fb; color: #17334b; }
+        header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 22px; background: white; border-bottom: 1px solid #e1e6ea; }
+        h1 { margin: 0; font-size: 21px; }
+        header a { color: #155e8c; }
+        .note { margin: 0; padding: 8px 22px; font-size: 13px; background: #fff8e6; }
+        #che-map-status { margin: 0; padding: 8px 22px; font-size: 13px; }
+        #che-global-map { width: 100%; height: calc(100vh - 115px); min-height: 400px; }
+        .che-map-popup p { margin: 5px 0; }
+        .che-filters { background: #fff; padding: 12px 22px; display: flex; gap: 10px; align-items: end; flex-wrap: wrap; border-bottom: 1px solid #e1e6ea; }
+        .che-filters label { font-size: 12px; font-weight: 650; display: flex; flex-direction: column; gap: 4px; }
+        .che-filters select, .che-filters input { max-width: 230px; min-width: 130px; border: 1px solid #b9cbd8; border-radius: 6px; padding: 7px; background: white; }
+        .che-filters button { padding: 8px 12px; border: 1px solid #b9cbd8; background: white; border-radius: 6px; cursor: pointer; }
+        #che-global-map { height: calc(100vh - 190px); }
+
+        @media (max-width: 640px) { h1 { font-size: 16px; } #che-global-map { height: calc(100vh - 145px); } }
+    </style>
+</head>
+<body>
+    <header><h1>CHE Composer | Global Event Map</h1><nav style="display:flex; gap:20px; align-items:center;"><a href="{% url 'che_events:index' %}">CHE Events</a><a href="{% url 'che_global_map' %}">Global Map</a><a href="{% url 'che_relationships' %}">Network Viewer</a><a href="{% url 'che_delta_push' %}">Push to DELTA</a></nav></header>
+    <p class="note">DEVELOPMENT VIEW: Synthetic demonstration events may be mixed with user-entered records. Illustrative polygons are not observed hazard footprints; this is not an operational monitoring service.</p>
+    <section class="che-filters" aria-label="CHE event filters">
+        <label>Keyword / UUID<input id="che-filter-q" type="search" placeholder="Search CHE records…"></label>
+        <label>Originating institution<select id="che-filter-originator"><option value="">All institutions</option></select></label>
+        <label>Event year<select id="che-filter-year"><option value="">All years</option></select></label>
+        <label>Event type<select id="che-filter-event_type"><option value="">All types</option></select></label>
+        <label>Status<select id="che-filter-status"><option value="">All statuses</option></select></label>
+        <button type="button" id="che-filter-clear">Clear filters</button>
+        <label style="flex-direction:row; align-items:center; gap:6px;">
+            <input type="checkbox" id="che-show-symbols" checked>
+            Show hazard symbols
+        </label>
+        <label style="flex-direction:row; align-items:center; gap:6px;">
+            <input type="checkbox" id="che-show-links">
+            Show event relationships
+        </label>
+    </section>
+    <p id="che-map-status" role="status">Loading CHE event geometries…</p>
+    <div id="che-global-map" data-geojson-url="{{ geojson_url }}" role="region" aria-label="CHE event geographic overview"></div>
+    <script src="{% static 'capeditor/js/maplibre-gl.js' %}"></script>
+    <script src="{% static 'che/js/hazard-symbols.js' %}"></script>
+    <script src="{% static 'che/js/global-map.js' %}"></script>
+</body>
+</html>

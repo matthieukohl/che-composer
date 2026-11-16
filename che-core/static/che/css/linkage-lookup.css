@@ -1,0 +1,10 @@
+.che-linkage-lookup{border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;margin-top:12px;padding:14px;max-width:860px}
+.che-linkage-lookup label{display:block;font-weight:650;margin-bottom:8px}
+.che-linkage-lookup input[type=search]{width:100%;max-width:100%;padding:10px;border:1px solid #94a3b8;border-radius:5px;background:white;color:#182f46}
+.che-linkage-note,.che-linkage-feedback{font-size:13px;margin:8px 0;color:#40566e}
+.che-linkage-results{max-height:260px;overflow-y:auto;border:1px solid #d7e1e8;border-radius:5px;background:white}
+.che-linkage-result{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #e5e7eb;background:white;padding:10px;cursor:pointer;color:#17334b}
+.che-linkage-result:hover,.che-linkage-result:focus{background:#eaf4fb;outline:2px solid #3d83b8;outline-offset:-2px}
+.che-linkage-result strong,.che-linkage-result small{display:block;overflow-wrap:anywhere}
+.che-linkage-result small{font-size:12px;color:#486175;margin-top:3px}
+.che-linkage-lookup>button{margin-top:9px}

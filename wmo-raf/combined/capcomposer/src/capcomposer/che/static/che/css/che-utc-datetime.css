@@ -1,0 +1,13 @@
+/* CHE-only datetime presentation. Native calendar/time values are UTC. */
+.che-utc-editor { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 8px; align-items: flex-start; }
+.che-utc-editor label { display: flex; flex-direction: column; gap: 4px; font-size: .875rem; font-weight: 600; }
+.che-utc-editor input { box-sizing: border-box; min-width: 150px; padding: 8px; border: 1px solid #8a939d; border-radius: 4px; background: var(--w-color-surface-field, #fff); color: var(--w-color-text, #222); }
+.che-utc-editor .che-utc-hint { flex-basis: 100%; margin: 0; color: var(--w-color-text-meta, #58616b); font-size: .8rem; }
+/* Keep the canonical Django field in the DOM and available as a fallback.
+   Do NOT display:none: native form validation might need to focus it. */
+.che-utc-original { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important; }
+.che-country-search { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; }
+.che-country-search input { min-width: 185px; max-width: 350px; flex: 1 1 180px; padding: 8px; border: 1px solid #8a939d; border-radius: 4px; background: var(--w-color-surface-field, #fff); color: var(--w-color-text, #222); }
+.che-country-search button { padding: 8px 12px; border: 1px solid #8a939d; border-radius: 4px; cursor: pointer; }
+.che-country-search select { max-width: 100%; padding: 8px; }
+.che-country-search .che-country-message { flex-basis: 100%; font-size: .8rem; margin: 0; }

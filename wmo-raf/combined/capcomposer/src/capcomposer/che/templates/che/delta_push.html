@@ -1,0 +1,435 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CHE Composer — Push to DELTA</title>
+  <style>
+    body { font: 15px system-ui, sans-serif; margin: 0; color: #243142; background: #f5f7fa; }
+    header { background: #173b59; color: white; padding: 18px 28px; display: flex; justify-content: space-between; align-items: center; }
+    header a { color: white; margin-left: 18px; }
+    main { max-width: 1150px; margin: 28px auto; padding: 0 20px; }
+    section { background: white; border: 1px solid #dce3ea; border-radius: 10px; padding: 22px; margin-bottom: 20px; }
+    h1, h2 { margin-top: 0; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input, select { font: inherit; padding: 9px; border: 1px solid #aab7c4; border-radius: 5px; }
+    input[type="url"], input[type="password"] { width: 100%; box-sizing: border-box; }
+    .connection { display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 14px; align-items: end; }
+    .filters { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+    .filters input { flex: 1; min-width: 200px; }
+    button { font: inherit; padding: 10px 16px; border: 0; border-radius: 5px; background: #176397; color: white; cursor: pointer; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px; border-bottom: 1px solid #e5eaf0; text-align: left; }
+    th { background: #edf2f6; }
+    .muted { color: #637487; font-size: 13px; }
+    .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+    @media (max-width: 750px) { .connection { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>CHE Composer — Push to DELTA</strong>
+    <nav><a href="{% url 'che_events:index' %}">CHE Events</a><a href="{% url 'che_global_map' %}">Global Map</a><a href="{% url 'che_relationships' %}">Network Viewer</a><a href="{% url 'che_delta_push' %}">Push to DELTA</a></nav>
+  </header>
+  <main>
+    <section>
+      <h2>DELTA connection</h2>
+      <p class="muted">Connect to your authorized national DELTA Resilience installation.</p>
+      <form id="delta-csrf-form" hidden>{% csrf_token %}</form>
+      <div class="connection">
+        <div>
+          <label for="delta-url">DELTA website URL</label>
+          <input id="delta-url" type="url" placeholder="https://delta.example.org" autocomplete="url">
+        </div>
+        <div>
+          <label for="delta-key">DELTA API key</label>
+          <input id="delta-key" type="password" placeholder="Enter API key" autocomplete="off">
+        </div>
+        <button id="test-connection" type="button">Test connection</button>
+      </div>
+      <p id="connection-status" class="muted" role="status" aria-live="polite">Enter your DELTA website URL and API key to test the connection.</p>
+    </section>
+
+    <section>
+      <h2>Select CHE events</h2>
+      <div class="filters">
+        <input id="event-search" type="search" placeholder="Search by hazard, originator or UUID" aria-label="Search CHE events">
+        <select id="event-type-filter" aria-label="Filter by event type">
+          <option value="">All event types</option>
+          {% for event_type in event_types %}
+          <option value="{{ event_type }}">{{ event_type }}</option>
+          {% endfor %}
+        </select>
+        <select id="event-sort" aria-label="Sort CHE events">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="hazard">Hazard type A–Z</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all" aria-label="Select all visible events"></th>
+            <th>CHE event</th>
+            <th>Originator</th>
+            <th>Start date</th>
+            <th>HIP mapping</th>
+            <th>Transfer status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in events %}
+          <tr class="event-row" data-eligible="{{ event.transfer_eligible|yesno:"true,false" }}" data-type="{{ event.event_type }}" data-date="{{ event.start_date|date:"Y-m-d" }}" data-search="{{ event.event_type|lower }} {{ event.originator|lower }} {{ event.uuid|lower }}">
+            <td><input type="checkbox" class="event-checkbox" value="{{ event.uuid }}" aria-label="Select {{ event.event_type }}" {% if not event.transfer_eligible %}disabled{% endif %}></td>
+            <td>
+              <strong>{{ event.event_type }}</strong><br>
+              <span class="muted">{{ event.uuid }}</span>
+            </td>
+            <td>{{ event.originator }}</td>
+            <td>{{ event.start_date|date:"Y-m-d" }}</td>
+            <td>
+              {% if event.hip_code %}
+                <strong>{{ event.hip_code }}</strong><br>
+                <span class="muted">{{ event.hip_hazard }}</span>
+              {% else %}
+                <span class="muted">Mapping unavailable</span>
+              {% endif %}
+            </td>
+            <td class="muted transfer-status">
+              {% if event.transfer_eligible %}
+                Not yet checked
+              {% elif event.status == "ongoing" %}
+                <span title="Ongoing CHE events cannot be transferred to DELTA.">Not eligible — ongoing</span>
+              {% elif not event.hip_code %}
+                <span title="No valid HIP mapping is available.">Not eligible — HIP mapping</span>
+              {% else %}
+                <span title="A start date and end date are required.">Not eligible — missing date</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="muted">No CHE events found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="actions">
+        <span class="muted">0 events selected</span>
+        <button id="push-selected" type="button" disabled>Push selected to DELTA</button>
+      </div>
+    </section>
+  </main>
+
+<script>
+(function () {
+
+  const testButton = document.getElementById("test-connection");
+  const connectionStatus = document.getElementById("connection-status");
+
+  testButton.addEventListener("click", async function () {
+    const url = document.getElementById("delta-url").value.trim();
+    const key = document.getElementById("delta-key").value;
+
+    if (!url || !key) {
+      connectionStatus.textContent = "Enter both the DELTA website URL and API key.";
+      return;
+    }
+
+    testButton.disabled = true;
+    connectionStatus.textContent = "Testing DELTA connection...";
+
+    try {
+      const response = await fetch("{% url 'che_delta_test_connection' %}", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": document.querySelector(
+            '#delta-csrf-form input[name="csrfmiddlewaretoken"]'
+          ).value,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          delta_url: url,
+          api_key: key
+        })
+      });
+
+      const result = await response.json();
+      connectionStatus.textContent = result.message ||
+        "The DELTA connection could not be verified.";
+    } catch (error) {
+      connectionStatus.textContent =
+        "Connection test failed. Please check server accessibility.";
+    } finally {
+      testButton.disabled = false;
+    }
+  });
+
+  const selectAll = document.getElementById("select-all");
+  const rows = Array.from(document.querySelectorAll(".event-row"));
+  const search = document.getElementById("event-search");
+  const typeFilter = document.getElementById("event-type-filter");
+  const sort = document.getElementById("event-sort");
+  const tbody = document.querySelector("tbody");
+  const count = document.querySelector(".actions .muted");
+
+  function visibleRows() {
+    return rows.filter(row => !row.hidden);
+  }
+
+  function updateCount() {
+    const selected = rows.filter(row =>
+      row.querySelector(".event-checkbox").checked
+    ).length;
+    const visible = visibleRows().filter(row =>
+      !row.querySelector(".event-checkbox").disabled
+    );
+    const visibleSelected = visible.filter(row =>
+      row.querySelector(".event-checkbox").checked
+    ).length;
+
+    count.textContent = selected + " events selected (" +
+      visible.length + " matching)";
+    selectAll.checked =
+      visible.length > 0 && visibleSelected === visible.length;
+    selectAll.indeterminate =
+      visibleSelected > 0 && visibleSelected < visible.length;
+    selectAll.disabled = visible.length === 0;
+  }
+
+  function updateTable() {
+    const term = search.value.trim().toLowerCase();
+    const type = typeFilter.value;
+
+    rows.forEach(row => {
+      row.hidden = !(
+        row.dataset.search.includes(term) &&
+        (!type || row.dataset.type === type)
+      );
+    });
+
+    const ordered = [...rows].sort((a, b) => {
+      if (sort.value === "hazard") {
+        return a.dataset.type.localeCompare(b.dataset.type);
+      }
+      const comparison = a.dataset.date.localeCompare(b.dataset.date);
+      return sort.value === "oldest" ? comparison : -comparison;
+    });
+
+    ordered.forEach(row => tbody.appendChild(row));
+    updateCount();
+  }
+
+  selectAll.setAttribute("aria-label", "Select all matching events");
+
+  selectAll.addEventListener("change", function () {
+    visibleRows().filter(row =>
+      !row.querySelector(".event-checkbox").disabled
+    ).forEach(row => {
+      row.querySelector(".event-checkbox").checked = selectAll.checked;
+    });
+    updateCount();
+  });
+
+  rows.forEach(row => {
+    row.querySelector(".event-checkbox")
+      .addEventListener("change", () => updateCount());
+  });
+
+  [search, typeFilter, sort].forEach(control => {
+    control.addEventListener("input", updateTable);
+  });
+
+
+
+  const pushButton = document.getElementById("push-selected");
+  const MAX_SELECTION = 1000;
+  const BATCH_SIZE = 25;
+  let pushInProgress = false;
+
+  function selectedRows() {
+    return rows.filter(row =>
+      row.querySelector(".event-checkbox").checked
+    );
+  }
+
+  function updatePushButton() {
+    const count = selectedRows().length;
+    pushButton.disabled =
+      pushInProgress || count === 0 || count > MAX_SELECTION;
+    pushButton.title = count > MAX_SELECTION
+      ? "Maximum 1,000 events per transfer."
+      : "";
+  }
+
+  const originalUpdateCount = updateCount;
+  updateCount = function () {
+    originalUpdateCount();
+    updatePushButton();
+  };
+
+  function setTransferStatus(row, status, message = "") {
+    const cell = row.querySelector(".transfer-status");
+    cell.textContent = status;
+    cell.title = message;
+  }
+
+  pushButton.addEventListener("click", async function () {
+    const selected = selectedRows();
+
+    if (!selected.length || selected.length > MAX_SELECTION) {
+      connectionStatus.textContent =
+        "Select between 1 and 1,000 CHE events.";
+      return;
+    }
+
+    const url = document.getElementById("delta-url").value.trim();
+    const key = document.getElementById("delta-key").value;
+
+    if (!url || !key) {
+      connectionStatus.textContent =
+        "Enter the DELTA website URL and API key.";
+      return;
+    }
+
+    const approved = window.confirm(
+      "Transfer " + selected.length + " CHE event(s) to:\n" +
+      url + "\n\n" +
+      "New records will be created. Existing matching records " +
+      "may be updated. Continue?"
+    );
+
+    if (!approved) return;
+
+    pushInProgress = true;
+    updatePushButton();
+
+    const selectionControls = [
+      selectAll,
+      ...rows.map(row => row.querySelector(".event-checkbox"))
+    ];
+    selectionControls.forEach(control => control.disabled = true);
+
+    const totals = {Created: 0, Updated: 0, Failed: 0};
+    let processed = 0;
+    let interrupted = false;
+
+    selected.forEach(row => setTransferStatus(row, "Queued"));
+
+    try {
+      for (let offset = 0; offset < selected.length; offset += BATCH_SIZE) {
+        const batch = selected.slice(offset, offset + BATCH_SIZE);
+        const formData = new URLSearchParams({
+          delta_url: url,
+          api_key: key
+        });
+
+        batch.forEach(row => {
+          const uuid = row.querySelector(".event-checkbox").value;
+          formData.append("event_ids", uuid);
+          setTransferStatus(row, "Transferring...");
+        });
+
+        connectionStatus.textContent =
+          "Transferring " + (offset + 1) + "–" +
+          Math.min(offset + BATCH_SIZE, selected.length) +
+          " of " + selected.length + " events...";
+
+        let result;
+        try {
+          const response = await fetch(
+            "{% url 'che_delta_push_selected' %}",
+            {
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": document.querySelector(
+                  '#delta-csrf-form input[name="csrfmiddlewaretoken"]'
+                ).value,
+                "Content-Type": "application/x-www-form-urlencoded"
+              },
+              body: formData
+            }
+          );
+
+          result = await response.json();
+
+          if (!Array.isArray(result.results)) {
+            throw new Error("No individual event results returned");
+          }
+        } catch (error) {
+          batch.forEach(row =>
+            setTransferStatus(
+              row,
+              "Unconfirmed",
+              "Connection interrupted; verify DELTA before retrying."
+            )
+          );
+          interrupted = true;
+          break;
+        }
+
+        const resultsByUUID = new Map(
+          result.results.map(item => [item.uuid, item])
+        );
+
+        batch.forEach(row => {
+          const uuid = row.querySelector(".event-checkbox").value;
+          const item = resultsByUUID.get(uuid);
+
+          if (!item || !["Created", "Updated", "Failed"].includes(item.status)) {
+            setTransferStatus(
+              row,
+              "Unconfirmed",
+              "No valid result returned for this event."
+            );
+            interrupted = true;
+            return;
+          }
+
+          totals[item.status] += 1;
+          setTransferStatus(
+            row,
+            item.status,
+            item.message ||
+              (item.delta_event_id
+                ? "DELTA event ID: " + item.delta_event_id
+                : "")
+          );
+        });
+
+        processed += batch.length;
+
+        connectionStatus.textContent =
+          processed + " of " + selected.length + " processed. " +
+          totals.Created + " created, " +
+          totals.Updated + " updated, " +
+          totals.Failed + " failed.";
+
+        if (interrupted) break;
+      }
+
+      const completedMessage =
+        totals.Created + " created, " +
+        totals.Updated + " updated, " +
+        totals.Failed + " failed.";
+
+      connectionStatus.textContent = interrupted
+        ? "Transfer interrupted. " + completedMessage +
+          " Check Unconfirmed events before retrying."
+        : "Transfer finished. " + completedMessage;
+
+    } finally {
+      pushInProgress = false;
+      selectionControls.forEach(control => control.disabled = false);
+      updateCount();
+    }
+  });
+
+  updateTable();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+{% load static %}
+<div class="che-map-widget" data-che-map-widget>
+  <p>Draw a polygon for the observed event area. Use the polygon button at the top left; double-click the last point to finish. You can subsequently select and reshape the polygon.</p>
+  <div id="{{ widget.attrs.id }}_map" data-che-map-canvas style="height: 430px; width: 100%; border: 1px solid #bbb; border-radius: 4px;"></div>
+  <textarea name="{{ widget.name }}" id="{{ widget.attrs.id }}" data-che-map-value hidden>{% if widget.value is not None %}{{ widget.value }}{% endif %}</textarea>
+  <p data-che-map-message role="status" style="font-size: 0.9em;"></p>
+  <button type="button" data-che-map-clear class="button button-secondary">Clear event area</button>
+  <p style="font-size: 0.85em;">The event geometry is saved as GeoJSON. For an ongoing event, you may leave the area unset.</p>
+</div>

@@ -1,0 +1,35 @@
+/* Hazard symbols for the 30 WMO CHE event types.
+   CHE-specific visualization only; CAP maps are unaffected. */
+
+window.CHE_HAZARD_SYMBOLS = Object.freeze({
+  "Air quality": "🌫️",
+  "Avalanche": "🏔️",
+  "Cold": "🥶",
+  "Drought": "🌵",
+  "Flooding": "🌊",
+  "Fog": "🌫️",
+  "Hail": "🧊",
+  "Haze": "🌫️",
+  "Heat (terrestrial and marine)": "🌡️",
+  "Ice flows/icebergs": "🧊",
+  "Icing/freezing rain/frost": "❄️",
+  "Landslide": "⛰️",
+  "Mid-/high-latitude cyclonic storm": "🌀",
+  "Rain": "🌧️",
+  "Sand/dust": "💨",
+  "Smoke": "🌫️",
+  "Snow": "❄️",
+  "Space weather": "☀️",
+  "Squall": "💨",
+  "Storm surge": "🌊",
+  "Subtropical/tropical cyclone": "🌀",
+  "Swell/waves": "🌊",
+  "Thunderstorm/lightning": "⛈️",
+  "Tornado": "🌪️",
+  "Tsunami": "🌊",
+  "UV radiation": "☀️",
+  "Volcanic ash": "🌋",
+  "Water quality": "💧",
+  "Wildfire": "🔥",
+  "Wind": "💨"
+});

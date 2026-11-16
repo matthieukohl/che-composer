@@ -1,0 +1,43 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CHE Event Relationship Explorer</title>
+  <link rel="stylesheet" href="{% static 'che/css/relationships.css' %}">
+</head>
+<body>
+  <header>
+    <div><strong>CHE Event Relationship Explorer</strong><small>Read-only · Explicit recorded linkages, not independently verified causation</small></div>
+    <nav><a href="{% url 'che_events:index' %}">CHE Events</a><a href="{% url 'che_global_map' %}">Global Map</a><a href="{% url 'che_relationships' %}">Network Viewer</a><a href="{% url 'che_delta_push' %}">Push to DELTA</a></nav>
+  </header>
+  <main>
+    <section class="controls" aria-label="Explorer controls">
+      <label for="search">Find an event (type, description, originator or UUID)</label>
+      <input id="search" type="search" placeholder="e.g. cyclone, Jamaica, rainfall…" autocomplete="off">
+      <label for="filter-originator">Originating institution</label>
+      <select id="filter-originator"><option value="">All institutions</option></select>
+      <label for="filter-year">Event year</label>
+      <select id="filter-year"><option value="">All years</option></select>
+      <label for="filter-event_type">Event type</label>
+      <select id="filter-event_type"><option value="">All types</option></select>
+      <label for="filter-status">Status</label>
+      <select id="filter-status"><option value="">All statuses</option></select>
+      <button id="clear-filters" type="button">Clear filters</button>
+      <label for="event-select">Matching events — select focus</label>
+      <select id="event-select" aria-label="Select event"><option>Loading events…</option></select>
+      <div class="row"><label for="depth">Depth</label><select id="depth"><option value="1">1 link</option><option value="2" selected>2 links</option><option value="3">3 links</option><option value="4">4 links</option></select>
+      <label for="layout">Layout</label><select id="layout"><option value="network" selected>Network</option><option value="levels">Hierarchy</option></select></div>
+      <p id="summary" role="status">Loading relationships…</p>
+    </section>
+    <section class="visual" aria-label="Event network visualization">
+      <svg id="network" role="img" aria-label="Interactive event-relationship graph" viewBox="0 0 1100 600" preserveAspectRatio="xMidYMid meet"></svg>
+      <p class="hint">Select a node to focus on it. Arrows point from a recorded linked parent to the referencing event. Gray nodes are unresolved UUID references; pale nodes are connected records outside the current filters. Hierarchy diagrams may scroll horizontally.</p>
+    </section>
+    <aside id="detail" aria-live="polite"></aside>
+  </main>
+  <script>window.CHE_RELATIONSHIPS_URL = "{% url 'che_relationships_data' %}";</script>
+  <script src="{% static 'che/js/relationships.js' %}" defer></script>
+</body>
+</html>

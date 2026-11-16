@@ -1,0 +1,607 @@
+from django.conf import settings
+from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.utils import quote
+from django.contrib.auth.models import Permission
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import reverse, path
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _, gettext
+from wagtail import VERSION as WAGTAIL_VERSION
+from wagtail import hooks
+from wagtail.actions.copy_page import CopyPageAction
+from wagtail.admin import messages
+from wagtail.admin import widgets as wagtailadmin_widgets
+from wagtail.admin.forms.pages import CopyForm
+from wagtail.admin.menu import MenuItem, Menu
+from wagtail.models import Page, Site
+from wagtail_modeladmin.helpers import AdminURLHelper
+from wagtail_modeladmin.helpers import (
+    PagePermissionHelper,
+    PermissionHelper,
+    PageButtonHelper,
+    ButtonHelper
+)
+from wagtail_modeladmin.menus import GroupMenuItem
+from wagtail_modeladmin.options import (
+    ModelAdmin,
+    modeladmin_register,
+    ModelAdminGroup
+)
+
+from capcomposer.capeditor.models import CapSetting
+from .models import (
+    CapAlertPage,
+    CapAlertListPage,
+    CAPAlertWebhook,
+    CAPAlertWebhookEvent,
+    OtherCAPSettings,
+    CAPAlertMQTTBroker,
+    CAPAlertMQTTBrokerEvent,
+    ExternalAlertFeed
+
+)
+from .republish import republish_mqtt_event, republish_webhook_event, disseminations_view
+from .utils import (
+    create_draft_alert_from_alert_data
+)
+from .views import create_cap_png_pdf, send_private_alert_email_view, cap_statistics_view, cap_statistics_export_csv
+
+CAN_EDIT_CAP = getattr(settings, "CAP_ALLOW_EDITING", False)
+
+
+@hooks.register('register_admin_urls')
+def urlconf_cap():
+    return [
+        path('import-cap/<int:alert_id>/', create_cap_png_pdf, name='create_cap_png_pdf'),
+        path('send-private-alert-email/<int:alert_id>/', send_private_alert_email_view,
+             name='send_private_alert_email'),
+        path('cap/statistics/', cap_statistics_view, name='cap_statistics'),
+        path('cap/statistics/export/csv/', cap_statistics_export_csv, name='cap_statistics_export_csv'),
+        path('cap/republish/mqtt/<int:event_id>/', republish_mqtt_event, name='republish_mqtt_event'),
+        path('cap/republish/webhook/<int:event_id>/', republish_webhook_event, name='republish_webhook_event'),
+        path('cap/disseminations/<int:alert_id>/', disseminations_view, name='cap_disseminations'),
+    ]
+
+
+class CAPPagePermissionHelper(PagePermissionHelper):
+    def user_can_delete_obj(self, user, obj):
+        can_delete = super().user_can_delete_obj(user, obj)
+        
+        if obj.live and obj.status == "Actual":
+            return False
+        
+        return can_delete
+    
+    def user_can_unpublish_obj(self, user, obj):
+        can_unpublish = super().user_can_unpublish_obj(user, obj)
+        
+        if obj.live and obj.status == "Actual":
+            return False
+        
+        return can_unpublish
+
+
+class CAPAlertPageButtonHelper(PageButtonHelper):
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        
+        classnames = self.edit_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        
+        if obj.is_published_publicly:
+            buttons_for_live = []
+            
+            if not obj.has_png_and_pdf:
+                label = _("Create PNG/PDF")
+                pdf_button = {
+                    "url": reverse("create_cap_png_pdf", args=[obj.pk]),
+                    "label": label,
+                    "classname": cn,
+                    "title": label
+                }
+                
+                buttons_for_live.append(pdf_button)
+            
+            live_button = {
+                "url": obj.get_full_url(),
+                "label": _("LIVE"),
+                "classname": cn,
+                "title": _("Visit the live page")
+            }
+            buttons_for_live.append(live_button)
+
+            disseminations_button = {
+                "url": reverse("cap_disseminations", args=[obj.pk]),
+                "label": _("Disseminations"),
+                "classname": cn,
+                "title": _("View MQTT and webhook dissemination events for this alert"),
+            }
+            buttons_for_live.append(disseminations_button)
+
+            buttons = buttons_for_live + buttons
+        
+        if obj.is_private_scope:
+            email_button = {
+                "url": reverse("send_private_alert_email", args=[obj.pk]),
+                "label": _("Email Recipients"),
+                "classname": cn,
+                "title": _("Send private alert email to recipients"),
+            }
+            buttons.append(email_button)
+        
+        return buttons
+
+
+class CAPAdmin(ModelAdmin):
+    model = CapAlertPage
+    menu_label = _('Alerts')
+    menu_icon = 'list-ul'
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    permission_helper_class = CAPPagePermissionHelper
+    button_helper_class = CAPAlertPageButtonHelper
+    list_display_add_buttons = "__str__"
+    list_filter = ("live", "msgType", "sent")
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # self.list_display = ["publish_status"] + list(self.list_display)
+        
+        # self.publish_status.__func__.short_description = _('Publish Status')
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        
+        if self.is_pagemodel:
+            site = Site.find_for_request(request)
+            root_page = site.root_page
+            
+            # filter only alerts that are children of this specific CapAlertListPage
+            if isinstance(root_page.specific, CapAlertListPage):
+                qs = qs.child_of(root_page.specific)
+        
+        return qs
+    
+    # def publish_status(self, obj):
+    #     if obj.live:
+    #         return format_html(
+    #             '<span class="w-status w-status--primary">{}</span>',
+    #             _("Live"),
+    #         )
+    #
+    #     if obj.latest_revision and obj.latest_revision.submitted_for_moderation:
+    #         return format_html(
+    #             '<span class="w-status">{}</span>',
+    #             _("In moderation"),
+    #         )
+    #
+    #     return format_html(
+    #         '<span class="w-status">{}</span>',
+    #         _("Draft"),
+    #     )
+    
+    def get_extra_class_names_for_field_col(self, obj, field_name):
+        if field_name == '__str__':
+            if not obj.live:
+                return ['unpublished']
+        return []
+
+
+class CAPAlertWebhookAdmin(ModelAdmin):
+    model = CAPAlertWebhook
+    menu_label = _('Webhooks')
+    menu_icon = 'multi-cluster-sector'
+    
+    def get_queryset(self, request):
+        site = Site.find_for_request(request)
+        return super().get_queryset(request).filter(site=site)
+
+
+class IsRepublishFilter(SimpleListFilter):
+    title = _("Republish")
+    parameter_name = "is_republish"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", _("Republishes only")),
+            ("no", _("Originals only")),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(source_event__isnull=False)
+        if self.value() == "no":
+            return queryset.filter(source_event__isnull=True)
+        return queryset
+
+
+def republish_source_display(obj):
+    if obj.source_event_id:
+        return _("Republish of #%(id)s") % {"id": obj.source_event_id}
+    return _("Original")
+
+
+republish_source_display.short_description = _("Type")
+
+
+class CAPEventButtonHelper(ButtonHelper):
+    republish_url_name = None
+
+    def republish_button(self, pk, classnames_add=None, classnames_exclude=None):
+        if classnames_add is None:
+            classnames_add = []
+        if classnames_exclude is None:
+            classnames_exclude = []
+        classnames = self.edit_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            "url": reverse(self.republish_url_name, args=[quote(pk)]),
+            "label": _("Republish"),
+            "classname": cn,
+            "title": _("Republish this alert to this target"),
+        }
+
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+        btns = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        pk = getattr(obj, self.opts.pk.attname)
+        btns.append(self.republish_button(pk, classnames_add, classnames_exclude))
+        return btns
+
+
+class CAPMQTTEventButtonHelper(CAPEventButtonHelper):
+    republish_url_name = "republish_mqtt_event"
+
+
+class CAPWebhookEventButtonHelper(CAPEventButtonHelper):
+    republish_url_name = "republish_webhook_event"
+
+
+class CAPAlertWebhookEventPermissionHelper(PermissionHelper):
+    def user_can_create(self, user):
+        return False
+
+    def user_can_edit_obj(self, user, obj):
+        return False
+
+    def user_can_delete_obj(self, user, obj):
+        return False
+
+    def user_can_copy_obj(self, user, obj):
+        return False
+
+
+class CAPAlertWebhookEventAdmin(ModelAdmin):
+    model = CAPAlertWebhookEvent
+    menu_label = _('Webhook Events')
+    menu_icon = 'notification'
+    list_display = ('webhook', 'alert', 'created', 'status', republish_source_display,)
+    list_filter = ('status', 'webhook', IsRepublishFilter,)
+    inspect_view_enabled = True
+
+    permission_helper_class = CAPAlertWebhookEventPermissionHelper
+    button_helper_class = CAPWebhookEventButtonHelper
+
+    def get_queryset(self, request):
+        site = Site.find_for_request(request)
+        return super().get_queryset(request).filter(webhook__site=site)
+
+
+class CAPAlertMQTTAdmin(ModelAdmin):
+    model = CAPAlertMQTTBroker
+    menu_label = CAPAlertMQTTBroker._meta.verbose_name_plural
+    menu_icon = 'globe'
+    list_display = ('name', 'host', 'port', 'created', 'modified')
+    list_filter = ('wis2box_metadata_id', 'active')
+    search_fields = ('name', 'wis2box_metadata_id')
+    
+    form_view_extra_js = ['cap/js/mqtt_collapse_panels.js']
+    
+    def get_queryset(self, request):
+        site = Site.find_for_request(request)
+        return super().get_queryset(request).filter(site=site)
+
+
+class CAPAlertMQTTEventPermissionHelper(PermissionHelper):
+    def user_can_create(self, user):
+        return False
+    
+    def user_can_edit_obj(self, user, obj):
+        return False
+    
+    def user_can_delete_obj(self, user, obj):
+        return False
+    
+    def user_can_copy_obj(self, user, obj):
+        return False
+
+
+class CAPAlertMQTTEventAdmin(ModelAdmin):
+    model = CAPAlertMQTTBrokerEvent
+    menu_label = CAPAlertMQTTBrokerEvent._meta.verbose_name_plural
+    menu_icon = 'notification'
+    list_display = ('broker', 'alert', 'created', 'status', republish_source_display,)
+    list_filter = ('broker', 'status', IsRepublishFilter,)
+    inspect_view_enabled = True
+
+    permission_helper_class = CAPAlertMQTTEventPermissionHelper
+    button_helper_class = CAPMQTTEventButtonHelper
+
+    def get_queryset(self, request):
+        site = Site.find_for_request(request)
+        return super().get_queryset(request).filter(broker__site=site)
+
+
+class CAPExternalFeedAdmin(ModelAdmin):
+    model = ExternalAlertFeed
+    menu_label = _('External CAP Alert Feeds')
+    menu_icon = 'link'
+    
+    def get_queryset(self, request):
+        site = Site.find_for_request(request)
+        return super().get_queryset(request).filter(site=site)
+
+
+class CAPMenuGroupAdminMenuItem(GroupMenuItem):
+    def is_shown(self, request):
+        return request.user.has_perm("cap.can_view_alerts_menu")
+
+
+class CAPMenuGroup(ModelAdminGroup):
+    menu_label = _('Alerts')
+    menu_icon = 'warning'  # change as required
+    menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
+    items = (
+        CAPAdmin,
+        CAPAlertWebhookAdmin,
+        CAPAlertWebhookEventAdmin,
+        CAPAlertMQTTAdmin,
+        CAPAlertMQTTEventAdmin,
+        CAPExternalFeedAdmin
+    )
+    
+    def get_menu_item(self, order=None):
+        if self.modeladmin_instances:
+            submenu = Menu(items=self.get_submenu_items())
+            return CAPMenuGroupAdminMenuItem(self, self.get_menu_order(), submenu)
+    
+    def get_submenu_items(self):
+        menu_items = []
+        item_order = 1
+        
+        for modeladmin in self.modeladmin_instances:
+            menu_items.append(modeladmin.get_menu_item(order=item_order))
+            item_order += 1
+        
+        try:
+            # add statistics menu
+            statistics_url = reverse("cap_statistics")
+            statistics_menu = MenuItem(label=_("Statistics"), url=statistics_url, icon_name="date")
+            menu_items.append(statistics_menu)
+
+            # add CAP import menu
+            settings_url = reverse("load_cap_alert")
+            import_cap_menu = MenuItem(label=_("Import CAP Alert"), url=settings_url, icon_name="upload")
+            menu_items.append(import_cap_menu)
+            
+            # add settings menu
+            settings_url = reverse(
+                "wagtailsettings:edit",
+                args=[CapSetting._meta.app_label, CapSetting._meta.model_name, ],
+            )
+            gm_settings_menu = MenuItem(label=_("CAP Base Settings"), url=settings_url, icon_name="cog")
+            menu_items.append(gm_settings_menu)
+            
+            #  add other cap settings menu
+            settings_url = reverse("wagtailsettings:edit",
+                                   args=[OtherCAPSettings._meta.app_label,
+                                         OtherCAPSettings._meta.model_name, ], )
+            
+            other_cap_settings_menu = MenuItem(label=_("Other Settings"), url=settings_url,
+                                               icon_name="cog")
+            
+            menu_items.append(other_cap_settings_menu)
+        
+        except Exception:
+            pass
+        
+        return menu_items
+
+
+modeladmin_register(CAPMenuGroup)
+
+
+@hooks.register('construct_settings_menu')
+def hide_settings_menu_item(request, menu_items):
+    hidden_settings = ["cap-settings", "cap-geomanager-settings", "other-cap-settings"]
+    menu_items[:] = [item for item in menu_items if item.name not in hidden_settings]
+
+
+@hooks.register('register_page_listing_buttons')
+def cap_page_listing_buttons(page, user, next_url=None):
+    if page and isinstance(page, CapAlertPage):
+        if page.is_published_publicly and not page.has_png_and_pdf:
+            # add a custom button to the page listing
+            yield wagtailadmin_widgets.PageListingButton(
+                _("Create PNG/PDF"),
+                reverse("create_cap_png_pdf", args=[page.pk]),
+                priority=10,
+            )
+        if page.is_published_publicly:
+            yield wagtailadmin_widgets.PageListingButton(
+                _("Disseminations"),
+                reverse("cap_disseminations", args=[page.pk]),
+                priority=12,
+            )
+        if page.is_private_scope:
+            yield wagtailadmin_widgets.PageListingButton(
+                _("Email Recipients"),
+                reverse("send_private_alert_email", args=[page.pk]),
+                priority=11,
+            )
+
+
+@hooks.register('construct_page_action_menu')
+def remove_all_buttons_for_published_alert(menu_items, request, context):
+    page = context.get("page")
+    
+    if page and isinstance(page, CapAlertPage):
+        if page.is_published_publicly and not CAN_EDIT_CAP:
+            # remove all buttons for published alerts
+            menu_items[:] = []
+
+
+@hooks.register("before_copy_page")
+def copy_cap_alert_page(request, page):
+    if page.specific.__class__.__name__ == "CapAlertPage":
+        # Parent page defaults to parent of source page
+        parent_page = page.get_parent()
+        
+        # Create the form.
+        # Wagtail < 7.3 requires an explicit can_publish kwarg; from 7.3 onwards
+        # CopyForm derives it internally and rejects the kwarg.
+        form_kwargs = {"user": request.user, "page": page}
+
+        if WAGTAIL_VERSION < (7, 3):
+            form_kwargs["can_publish"] = parent_page.permissions_for_user(
+                request.user
+            ).can_publish_subpage()
+
+        form = CopyForm(request.POST or None, **form_kwargs)
+
+        copy_form_fields_to_exclude = [
+            "publish_copies",
+            "alias",
+        ]
+        
+        for field in copy_form_fields_to_exclude:
+            if form.fields.get(field):
+                form.fields.pop(field)
+        
+        alert_page_fields_to_exclude = [
+            "alert_area_map_image",
+            "alert_pdf_preview",
+            "expires",
+            "search_image",
+            "search_description",
+        ]
+        
+        # Check if user is submitting
+        if request.method == "POST":
+            # Prefill parent_page in case the form is invalid (as prepopulated value for the form field,
+            # because ModelChoiceField seems to not fall back to the user given value)
+            parent_page = Page.objects.get(id=request.POST["new_parent_page"])
+            
+            if form.is_valid():
+                # Receive the parent page (this should never be empty)
+                if form.cleaned_data["new_parent_page"]:
+                    parent_page = form.cleaned_data["new_parent_page"]
+                
+                action = CopyPageAction(
+                    page=page,
+                    recursive=form.cleaned_data.get("copy_subpages"),
+                    to=parent_page,
+                    update_attrs={
+                        "title": form.cleaned_data["new_title"],
+                        "slug": form.cleaned_data["new_slug"],
+                        "sent": timezone.localtime(),
+                    },
+                    keep_live=False,
+                    copy_revisions=False,
+                    user=request.user,
+                    exclude_fields=alert_page_fields_to_exclude,
+                )
+                
+                new_page = action.execute()
+                
+                messages.success(
+                    request,
+                    _("Alert '%(page_title)s' copied. You can edit the new alert below.")
+                    % {"page_title": page.specific_deferred.get_admin_display_title()},
+                )
+                
+                for fn in hooks.get_hooks("after_copy_page"):
+                    result = fn(request, page, new_page)
+                    if hasattr(result, "status_code"):
+                        return result
+                
+                # redirect to the edit copied page
+                return redirect(reverse("wagtailadmin_pages:edit", args=(new_page.id,)))
+        
+        return TemplateResponse(
+            request,
+            "wagtailadmin/pages/copy.html",
+            {
+                "page": page,
+                "form": form,
+            },
+        )
+    
+    return None
+
+
+@hooks.register("before_unpublish_page")
+def before_unpublish_cap_alert_page(request, page):
+    page = page.specific
+    if page.__class__.__name__ == "CapAlertPage":
+        if page.live and page.status == "Actual":
+            url = AdminURLHelper(page).get_action_url("index")
+            messages.warning(request, gettext("Actual Alerts cannot be Unpublished after they have been published"))
+            return redirect(url)
+    
+    return None
+
+
+@hooks.register("before_delete_page")
+def before_delete_cap_alert_page(request, page):
+    page = page.specific
+    if page.__class__.__name__ == "CapAlertPage":
+        if page.live and page.status == "Actual":
+            url = AdminURLHelper(page).get_action_url("index")
+            messages.warning(request, gettext(
+                "Actual Alerts cannot be deleted after they have been published. To cancel or publish an update "
+                "to this alert, create a new alert of Message Type 'Cancel' or 'Update' and reference this alert"))
+            return redirect(url)
+    return None
+
+
+@hooks.register("before_import_cap_alert")
+def import_cap_alert(request, alert_data, include_guid=False, site=None):
+    new_cap_alert_page = create_draft_alert_from_alert_data(
+        alert_data, request, site=site, include_guid=include_guid
+    )
+    
+    if not new_cap_alert_page:
+        return None
+    
+    messages.success(request, gettext("CAP Alert draft created. You can now edit the alert."))
+    return redirect(reverse("wagtailadmin_pages:edit", args=[new_cap_alert_page.id]))
+
+
+@hooks.register("register_icons")
+def register_icons(icons):
+    brands = [
+        'wagtailfontawesomesvg/brands/facebook.svg',
+        'wagtailfontawesomesvg/brands/twitter.svg',
+        'wagtailfontawesomesvg/brands/linkedin.svg',
+        'wagtailfontawesomesvg/brands/telegram.svg',
+        'wagtailfontawesomesvg/brands/whatsapp.svg',
+    ]
+    
+    return icons + [
+        'cap/icons/category.svg',
+        'cap/icons/certainty.svg',
+        'cap/icons/clock.svg',
+        'cap/icons/language.svg',
+        'cap/icons/response.svg',
+        'cap/icons/warning.svg',
+        'cap/icons/warning-outline.svg',
+        'cap/icons/x-twitter.svg',
+    ] + brands
+
+
+@hooks.register("register_permissions")
+def register_permissions():
+    return Permission.objects.filter(content_type__app_label="cap")

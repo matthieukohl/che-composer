@@ -1,0 +1,186 @@
+{
+  "version": "1.0",
+  "source": "CHE _--_ HIP.xlsx",
+  "mappings": [
+    {
+      "che_event_type": "Air quality",
+      "hip_code": "MH0205",
+      "hip_cluster": "Particle-related",
+      "hip_hazard": "Smoke"
+    },
+    {
+      "che_event_type": "Avalanche",
+      "hip_code": "MH0801",
+      "hip_cluster": "Terrestrial",
+      "hip_hazard": "Avalanche"
+    },
+    {
+      "che_event_type": "Cold",
+      "hip_code": "MH0502",
+      "hip_cluster": "Temperature-related",
+      "hip_hazard": "Cold Wave"
+    },
+    {
+      "che_event_type": "Drought",
+      "hip_code": "MH0401",
+      "hip_cluster": "Precipitation-related",
+      "hip_hazard": "Drought"
+    },
+    {
+      "che_event_type": "Flooding",
+      "hip_code": "MH0600",
+      "hip_cluster": "Water-related",
+      "hip_hazard": "Flooding"
+    },
+    {
+      "che_event_type": "Fog",
+      "hip_code": "MH0202",
+      "hip_cluster": "Particle-related",
+      "hip_hazard": "Fog"
+    },
+    {
+      "che_event_type": "Hail",
+      "hip_code": "MH0404",
+      "hip_cluster": "Precipitation-related",
+      "hip_hazard": "Hail"
+    },
+    {
+      "che_event_type": "Haze",
+      "hip_code": "MH0203",
+      "hip_cluster": "Particle-related",
+      "hip_hazard": "Haze"
+    },
+    {
+      "che_event_type": "Heat (terrestrial and marine)",
+      "hip_code": "MH0501",
+      "hip_cluster": "Temperature-related",
+      "hip_hazard": "Heatwave"
+    },
+    {
+      "che_event_type": "Ice flows/icebergs",
+      "hip_code": "MH0706",
+      "hip_cluster": "Marine-related",
+      "hip_hazard": "Sea Ice (Icebergs)"
+    },
+    {
+      "che_event_type": "Icing/freezing rain/frost",
+      "hip_code": "MH0504",
+      "hip_cluster": "Temperature-related",
+      "hip_hazard": "Freeze"
+    },
+    {
+      "che_event_type": "Landslide",
+      "hip_code": "GH0300",
+      "hip_cluster": "Ground Failure",
+      "hip_hazard": "Gravitational Mass Movement (Landslide)"
+    },
+    {
+      "che_event_type": "Mid-/high-latitude cyclonic storm",
+      "hip_code": "MH0307",
+      "hip_cluster": "Wind- & Pressure-related",
+      "hip_hazard": "Extra-tropical Cyclone"
+    },
+    {
+      "che_event_type": "Rain",
+      "hip_code": "MH0402",
+      "hip_cluster": "Precipitation-related",
+      "hip_hazard": "Rain"
+    },
+    {
+      "che_event_type": "Sand/dust",
+      "hip_code": "MH0201",
+      "hip_cluster": "Particle-related",
+      "hip_hazard": "Dust storm or Sandstorm"
+    },
+    {
+      "che_event_type": "Smoke",
+      "hip_code": "MH0205",
+      "hip_cluster": "Particle-related",
+      "hip_hazard": "Smoke"
+    },
+    {
+      "che_event_type": "Snow",
+      "hip_code": "MH0405",
+      "hip_cluster": "Precipitation-related",
+      "hip_hazard": "Snow"
+    },
+    {
+      "che_event_type": "Space weather",
+      "hip_code": "ET0102",
+      "hip_cluster": "Space Weather",
+      "hip_hazard": "Ionospheric  Disturbances"
+    },
+    {
+      "che_event_type": "Squall",
+      "hip_code": "MH0304",
+      "hip_cluster": "Wind- & Pressure-related",
+      "hip_hazard": "Squall"
+    },
+    {
+      "che_event_type": "Storm surge",
+      "hip_code": "MH0703",
+      "hip_cluster": "Marine-related",
+      "hip_hazard": "Storm Surge"
+    },
+    {
+      "che_event_type": "Subtropical/tropical cyclone",
+      "hip_code": "MH0309",
+      "hip_cluster": "Wind- & Pressure-related",
+      "hip_hazard": "Tropical Cyclone"
+    },
+    {
+      "che_event_type": "Swell/waves",
+      "hip_code": "MH0701",
+      "hip_cluster": "Marine-related",
+      "hip_hazard": "Rogue Wave"
+    },
+    {
+      "che_event_type": "Thunderstorm/lightning",
+      "hip_code": "MH0103",
+      "hip_cluster": "Convective-related",
+      "hip_hazard": "Thunderstorm"
+    },
+    {
+      "che_event_type": "Tornado",
+      "hip_code": "MH0305",
+      "hip_cluster": "Wind- & Pressure-related",
+      "hip_hazard": "Tornado"
+    },
+    {
+      "che_event_type": "Tsunami",
+      "hip_code": "MH0705",
+      "hip_cluster": "Marine-related",
+      "hip_hazard": "Tsunami"
+    },
+    {
+      "che_event_type": "UV radiation",
+      "hip_code": "ET0202",
+      "hip_cluster": "Extraterrestrial Hazards",
+      "hip_hazard": "Ultraviolet Radiation"
+    },
+    {
+      "che_event_type": "Volcanic ash",
+      "hip_code": "GH0203",
+      "hip_cluster": "Volcanic",
+      "hip_hazard": "Ash/Tephra Fall"
+    },
+    {
+      "che_event_type": "Water quality",
+      "hip_code": "EN0106",
+      "hip_cluster": "Environmental Degradation",
+      "hip_hazard": "Runoff / Nonpoint Source Pollution"
+    },
+    {
+      "che_event_type": "Wildfire",
+      "hip_code": "EN0205",
+      "hip_cluster": "Environmental Degradation",
+      "hip_hazard": "Wildfires"
+    },
+    {
+      "che_event_type": "Wind",
+      "hip_code": "MH0301",
+      "hip_cluster": "Wind- & Pressure-related",
+      "hip_hazard": "Wind"
+    }
+  ]
+}
