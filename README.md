@@ -97,6 +97,37 @@ The repository is organized to support two installation approaches for each CAP 
 
 The `che-core/` directory currently contains shared source files and is not a separately installable Python package.
 
+### Where CHE Composer files are located
+
+The CHE add-on is added inside the existing CAP Composer application.
+The structure below shows the main files after installation:
+
+```text
+CAP Composer folder/
+├── capcomposer/
+│   └── src/capcomposer/
+│       ├── cap/                          Existing CAP alert functions
+│       ├── che/                          New CHE events application
+│       │   ├── models.py                 Hazardous-event records
+│       │   ├── views.py                  CHE pages
+│       │   ├── urls.py                   CHE page addresses
+│       │   ├── wagtail_hooks.py          CHE administration menus
+│       │   ├── templates/                CHE page layouts
+│       │   ├── static/                   Maps and interface files
+│       │   └── migrations/               CHE database setup
+│       └── config/
+│           ├── settings/base.py          Enables CHE
+│           ├── urls.py                   Connects CHE pages
+│           └── templates/wagtailadmin/
+│               └── base.html             Updates the admin interface
+└── .che-recovery-journal/                Saved original CAP files
+```
+
+CAP alerts and CHE events are kept separately. The installer adds 36 CHE
+files and two files for the CAP + CHE logo. It changes three existing CAP
+configuration files: `base.py` to load CHE, `urls.py` to connect its pages,
+and `wagtailadmin/base.html` to update the administration interface.
+
 ## Installation — WMO-RAF Combined Edition
 
 This installation provides CAP Composer and CHE Composer together, including the required application and database infrastructure.
@@ -271,36 +302,6 @@ The installer checks the location of the CAP Composer folder before allowing cha
 
 The folder check is not proof that an installation is safe for real-world use. Full backup and recovery testing is still needed before installation on an operational system can be enabled. Do not rename or move a real national installation simply to bypass this restriction.
 
-### Where CHE Composer files are located
-
-The CHE add-on is added inside the existing CAP Composer application.
-The structure below shows the main files after installation:
-
-```text
-CAP Composer folder/
-├── capcomposer/
-│   └── src/capcomposer/
-│       ├── cap/                          Existing CAP alert functions
-│       ├── che/                          New CHE events application
-│       │   ├── models.py                 Hazardous-event records
-│       │   ├── views.py                  CHE pages
-│       │   ├── urls.py                   CHE page addresses
-│       │   ├── wagtail_hooks.py          CHE administration menus
-│       │   ├── templates/                CHE page layouts
-│       │   ├── static/                   Maps and interface files
-│       │   └── migrations/               CHE database setup
-│       └── config/
-│           ├── settings/base.py          Enables CHE
-│           ├── urls.py                   Connects CHE pages
-│           └── templates/wagtailadmin/
-│               └── base.html             Updates the admin interface
-└── .che-recovery-journal/                Saved original CAP files
-```
-
-CAP alerts and CHE events are kept separately. The installer adds 36 CHE
-files and two files for the CAP + CHE logo. It changes three existing CAP
-configuration files: `base.py` to load CHE, `urls.py` to connect its pages,
-and `wagtailadmin/base.html` to update the administration interface.
 
 ### How to remove CHE and return to CAP Composer
 
