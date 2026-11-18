@@ -1,0 +1,6 @@
+{
+  "cap_composer_version": "1.3.6",
+  "upstream_template_sha256": "0e59e3057af2acbc2848778b36e226bdf6317e50b7ac7cd03245bf2c067cfa4a",
+  "original_branding_logo_block": "{% block branding_logo %}\n    <figure style=\"max-height: 120px;max-width: 120px;padding: 2px\">\n        <img src=\"{% static 'images/capcomposer_white.png' %}\" alt=\"CAPComposer Dashboard Logo\"\n             style=\"height: 100%;width: 100%;object-fit: contain\"/>\n    </figure>\n{% endblock %}",
+  "joint_branding_logo_block": "{% block branding_logo %}\n    <figure style=\"max-height: 140px;max-width: 140px;padding: 2px\">\n        {% if che_composer_installed %}\n            <img src=\"{% static 'images/cap_che_composer.png' %}\"\n                 alt=\"CAP and CHE Composer\"\n                 style=\"height: 100%;width: 100%;object-fit: contain\"/>\n        {% else %}\n            <img src=\"{% static 'images/capcomposer_white.png' %}\"\n                 alt=\"CAP Composer\"\n                 style=\"height: 100%;width: 100%;object-fit: contain\"/>\n        {% endif %}\n    </figure>\n{% endblock %}"
+}

@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "component": "capcomposer.che",
+  "source": "che-core",
+  "destination": "capcomposer/src/capcomposer/che",
+  "files": [
+    {
+      "path": "__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "apps.py",
+      "size": 257,
+      "sha256": "ad01132ccf5a79347889fd9d61ef102a285f72bcf8b1d3c548194b978df8a27b"
+    },
+    {
+      "path": "data/che_hip_crosswalk_v1.json",
+      "size": 4829,
+      "sha256": "46754de3806c1b88e494b06152a282efef633117f74310d7705891e26ea0e584"
+    },
+    {
+      "path": "delta_client.py",
+      "size": 5189,
+      "sha256": "6e87e59b6d8e0a799aec265293cb1b4400f0c62a9319523b9edca3eb3b611c7e"
+    },
+    {
+      "path": "delta_converter.py",
+      "size": 2704,
+      "sha256": "74b256f930cbd1638d92b63576cac71b3cea79b8acf50b62861dfade77f703b0"
+    },
+    {
+      "path": "delta_mapping.py",
+      "size": 1445,
+      "sha256": "c8d32c3ac00cc0219267a7bcb56377d7439041d7dc2fb0cffe73556d06966c14"
+    },
+    {
+      "path": "delta_security.py",
+      "size": 3109,
+      "sha256": "11933bf833b809303534af71c57c403988582d904dc0724fc10247ca359eda66"
+    },
+    {
+      "path": "delta_transport.py",
+      "size": 3600,
+      "sha256": "41254936f110c023d6bdc616a576d1133e91d74a156f7017df4ac0f7b2fde6af"
+    },
+    {
+      "path": "delta_views.py",
+      "size": 6475,
+      "sha256": "190847c9942a26c845d0b1a0b2814a58552c08fd5769f6fd6c3e45a1bacc2823"
+    },
+    {
+      "path": "filters.py",
+      "size": 3369,
+      "sha256": "dee5cf637bb541926c8ddf23e710515a3d573b893e0bdadb79ab2b5dccc1a705"
+    },
+    {
+      "path": "linkage_lookup.py",
+      "size": 2278,
+      "sha256": "9393bcbd6a59b3d1d4389242edd1d71cc86be321bb8cc6ff2ba886f29ce602f1"
+    },
+    {
+      "path": "management/__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "management/commands/__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "management/commands/generate_che_demo_events.py",
+      "size": 11568,
+      "sha256": "dc3334293f77571ee679ab581dcc310e2bbdbbc9fbe55c0c184197cdf89f1717"
+    },
+    {
+      "path": "management/commands/update_che_demo_events.py",
+      "size": 9704,
+      "sha256": "2831915c5e7ec3b25934f6a7dea63fef828f243115afaead753986244bc9077a"
+    },
+    {
+      "path": "migrations/0001_initial.py",
+      "size": 3453,
+      "sha256": "7af41c24cf84aad1e11c51dbe2ecdcbaabf8d2bbd2ee4eda0710b2c435c07e41"
+    },
+    {
+      "path": "migrations/__init__.py",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "models.py",
+      "size": 5765,
+      "sha256": "445bdb873395517a98bfd64d7fbe5e62fc7866ab24afdf9b1055b9583fbad007"
+    },
+    {
+      "path": "relationship_views.py",
+      "size": 1998,
+      "sha256": "a8dd8ae1cc487c17501bd10103488335875e9b2fe1e6d056b0c0659635c43d62"
+    },
+    {
+      "path": "static/che/css/che-utc-datetime.css",
+      "size": 1531,
+      "sha256": "b6a181b0c6321aa9489bd12189ba6b944fdd4b16697fec0b8d6d79725217020e"
+    },
+    {
+      "path": "static/che/css/linkage-lookup.css",
+      "size": 1039,
+      "sha256": "2290435c98649e66433daa194e08674b0077bdc36ebe816d1fa091f4446ac2af"
+    },
+    {
+      "path": "static/che/css/relationships.css",
+      "size": 2036,
+      "sha256": "bcb577e01b0a6641d3593d6750b2bc6eb975e17b21eed7de3dfef6dc8bc4b798"
+    },
+    {
+      "path": "static/che/js/che-utc-datetime.js",
+      "size": 4133,
+      "sha256": "67a62fd427366ad4d966155cbec89b72fbf709fa4c847ca013c63b01d586ce65"
+    },
+    {
+      "path": "static/che/js/global-map.js",
+      "size": 12858,
+      "sha256": "315b0b415e76d2665c800990c61ac5b0609971cd10ff79d84550ebc1a7b7518e"
+    },
+    {
+      "path": "static/che/js/hazard-symbols.js",
+      "size": 958,
+      "sha256": "b8ffa8ab69f7ab0bbc385db57be3789b7f55db9f5f3a4af75da2f10bbf18c97f"
+    },
+    {
+      "path": "static/che/js/linkage-lookup.js",
+      "size": 4318,
+      "sha256": "4f215053e9912227900bda384ea8487e259772135e54266a89b73a2e6381f35d"
+    },
+    {
+      "path": "static/che/js/relationships.js",
+      "size": 13606,
+      "sha256": "8017472a5e0665dbb0e175b777f46d9b0f6e5053d4d4cd89c8e8dd7de6f1c656"
+    },
+    {
+      "path": "static/che/js/spatial-area-map.js",
+      "size": 8865,
+      "sha256": "b5eb04aa773da85bed295e2f58f3ee1676cf46537d255e393d5122b573b3d153"
+    },
+    {
+      "path": "templates/che/delta_push.html",
+      "size": 15358,
+      "sha256": "2d6c34ab5ce646340a5af2e3db02c43b3598333aae3de24ec1f53ed9046b35f0"
+    },
+    {
+      "path": "templates/che/global_map.html",
+      "size": 3898,
+      "sha256": "2648a70d047237c5de8d73ae6fdd4b282cd1369d41915cc445004f9f46ceb3a6"
+    },
+    {
+      "path": "templates/che/relationships.html",
+      "size": 2985,
+      "sha256": "030d9222c4ea8decc3e0316959ec06107d94b6247ffd2f7564eaa0ab21e59721"
+    },
+    {
+      "path": "templates/che/widgets/spatial_area_map.html",
+      "size": 868,
+      "sha256": "7b2e06a27c098688d940cd908f184e37c7d48b965f9e5797b9915772d87b4eba"
+    },
+    {
+      "path": "urls.py",
+      "size": 992,
+      "sha256": "a836cce09670bfaa19be2d83fb2c8fc9e50720e9cdcef9271da77a96fee1eda2"
+    },
+    {
+      "path": "views.py",
+      "size": 3043,
+      "sha256": "2748008d765cccb43dac39e172b63bef077e7d6011624c0d4fa6d5e5a927c9c4"
+    },
+    {
+      "path": "wagtail_hooks.py",
+      "size": 5851,
+      "sha256": "387f4741f46fbdaffae3984dc85a140abbaeb3a0d264247a0f63776654e43e0a"
+    },
+    {
+      "path": "widgets.py",
+      "size": 1127,
+      "sha256": "39da6fadfc27b02a53b136ad6f9099f37b6cbe91c5dff286fc635694be6b0294"
+    }
+  ]
+}

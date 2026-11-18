@@ -18,3 +18,15 @@ __pycache__/
 
 # Public installation templates
 !.env.standalone.sample
+
+# Isolated CAP-only add-on test source
+/wmo-raf/addon/test-cap-source/
+
+# Local add-on backup testing
+/wmo-raf/addon/test-backups/
+
+/wmo-raf/addon/transaction-tests/
+/wmo-raf/addon/deployment.json
+/wmo-raf/addon/**/deployment.json
+**/.che-recovery-journal/
+**/.che-transaction.lock

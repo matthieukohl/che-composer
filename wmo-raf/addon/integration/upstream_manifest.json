@@ -1,0 +1,13 @@
+{
+  "upstream": "wmo-raf/cap-composer",
+  "version": "1.3.6",
+  "commit": "527751b04903e67dd6419750a157ec32e6940756",
+  "sha256": {
+    "Dockerfile": "2ec272ad7d99a58272769d6b77273bfe2ee3617aced0098a83797c1181903d32",
+    "capcomposer/pyproject.toml": "614f8498f55b79158397d93121dcf722f6b34984e5e81f00e7f404880d09fe39",
+    "capcomposer/src/capcomposer/config/settings/base.py": "73fd18d265dac9da1a83736c68bb911407c9584f6f3b12aacc681c539d968a48",
+    "capcomposer/src/capcomposer/config/urls.py": "ac2cb486d61118c7e9832a3ee1859dbf6dc160dee6963642b04a38789c44204a",
+    "capcomposer/src/capcomposer/config/templates/wagtailadmin/base.html": "0e59e3057af2acbc2848778b36e226bdf6317e50b7ac7cd03245bf2c067cfa4a",
+    "capcomposer/docker/docker-entrypoint.sh": "86cb19636597f5fb47321de02ba2cc4eac09ee6a06453eb442afedfe72d04858"
+  }
+}

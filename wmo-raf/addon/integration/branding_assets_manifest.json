@@ -1,0 +1,15 @@
+{
+  "cap_composer_version": "1.3.6",
+  "assets": [
+    {
+      "path": "config/branding.py",
+      "size": 296,
+      "sha256": "baf520bc310f99ea8b000192b697f5fccd5af231861f31072e50cb18fe6a012e"
+    },
+    {
+      "path": "config/static/images/cap_che_composer.png",
+      "size": 1140393,
+      "sha256": "015f3e9dd1c2d684a8ccd876dcce8cb21fa2fa71210a58c3fe6138032b499d4e"
+    }
+  ]
+}

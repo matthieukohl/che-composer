@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cap_path": "/REPLACE/WITH/NATIONAL/CAP-COMPOSER/PATH",
+  "docker": {
+    "project": "REPLACE_PROJECT_NAME",
+    "app_service": "REPLACE_APP_SERVICE",
+    "db_service": "REPLACE_DB_SERVICE",
+    "compose_files": [
+      "REPLACE_COMPOSE_FILENAME.yml"
+    ]
+  },
+  "database": {
+    "name": "REPLACE_DATABASE_NAME",
+    "db_user": "REPLACE_POSTGRES_USER",
+    "django_db_user": "REPLACE_DJANGO_DB_USER",
+    "host": "REPLACE_DATABASE_HOST",
+    "original_db": "REPLACE_DATABASE_NAME",
+    "restored_db": "che_restore_REPLACE_COUNTRY"
+  },
+  "recovery": {
+    "manifest": "/REPLACE/WITH/RECOVERY/MANIFEST/PATH",
+    "evidence": "/REPLACE/WITH/RESTORATION/EVIDENCE/PATH",
+    "container": "REPLACE_POSTGRES_CONTAINER"
+  }
+}
