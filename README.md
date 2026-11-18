@@ -185,155 +185,52 @@ Do not reuse the database volumes or runtime configuration of an existing operat
 
 ## CHE Add-On Installation
 
-A separately installable CHE add-on for organizations already operating WMO-RAF CAP Composer is under development.
+CHE Composer can be added to an existing **WMO-RAF CAP Composer 1.3.6** installation. It adds CHE features to CAP Composer without replacing it.
 
-The add-on is intended to reuse the existing CAP Composer installation and database infrastructure while adding the CHE application and its database tables.
+### Install CHE in a test environment
 
-Installation instructions will be provided after compatibility and migration testing against a clean upstream CAP Composer installation.
+**1. Download CHE Composer.** Open Terminal and run:
 
-### What the installer checks
-
-The add-on uses separate planning, installation and deployment-preflight
-steps. A successful planning check does not mean that installation has
-started, and successful installation does not by itself establish that
-the application is ready for operational use.
-
-#### 1. Source and compatibility planning
-
-The read-only planner checks that:
-
-- The packaged CHE source contains the expected 36 files.
-- The two CHE branding assets are present and verified.
-- Three targeted changes to CAP Composer settings, URL routing and
-  administration branding can be prepared.
-- The planned destinations do not conflict with occupied files or
-  unsafe locations.
-- The complete installation plan contains 41 operations.
-
-The installer is designed for the verified WMO-RAF CAP Composer
-v1.3.6 source layout. Other versions and national customizations
-require separate compatibility verification.
-
-#### 2. Code insertion and source recovery
-
-The development installer:
-
-- Restricts executable installation to approved disposable test
-  workspaces; operational CAP project paths are rejected.
-- Prepares a recovery journal identifying the 41 source operations.
-- Saves snapshots of the three original CAP configuration files.
-- Inserts 36 CHE files and two branding assets.
-- Applies the three planned CAP configuration changes.
-
-The source recovery mechanism is intended to restore those original
-configuration files and remove CHE-created files when recovery
-conditions are satisfied. It is not equivalent to restoring an
-entire CAP Composer installation.
-
-#### 3. National deployment preflight
-
-A separate read-only preflight checks deployment configuration and
-supporting evidence related to CAP source compatibility, Docker,
-database identity and backup/restoration verification.
-
-Passing these checks does not authorize production installation.
-The deployment preflight and recovery evidence still require
-additional validation before operational use.
-
-#### 4. Checks performed after our test installation
-
-In the isolated localhost:8084 test of CAP Composer v1.3.6, we
-separately verified that:
-
-- All 41 installed source files matched their expected SHA-256 hashes.
-- The rebuilt Docker application and background workers started.
-- Django reported no system-check errors.
-- Django recognized `capcomposer.che` and the `CHEEvent` model.
-- CHE migration `0001_initial` was applied.
-- An existing CAP alert and its parent list matched the saved
-  pre-installation database baseline exactly.
-- The CAP administration interface remained accessible.
-
-These are observed test results, not automatic guarantees made by
-the installation command.
-
-#### 5. What the installer does not guarantee
-
-- It does not automatically create a verified full database backup.
-- It does not automatically create a verified media or uploaded-logo
-  backup.
-- It does not establish full disaster-recovery readiness.
-- It does not authorize installation into an operational national
-  CAP Composer system.
-
-Before any future production deployment, database and media backups
-must be created, protected and successfully restoration-tested
-independently.
-
-### Add-on deployment workflow (development release candidate)
-
-The CHE add-on is designed for existing WMO-RAF CAP Composer v1.3.6
-installations. Unlike the combined edition described above, it adds CHE
-to an existing CAP Composer deployment through targeted changes intended
-to preserve national settings, URL registrations, and existing branding.
-
-The add-on contains 36 CHE source files, two branding assets, and three
-targeted configuration patches: 41 source operations in total.
-
-#### Deployment configuration
-
-After cloning this repository, copy
-`wmo-raf/addon/deployment.example.json` to your private `deployment.json`
-and replace the placeholders with the actual CAP project path, Docker
-services, database identities, and recovery evidence paths. Do not commit
-private deployment settings, credentials, or recovery evidence to Git.
-
-#### Terminal workflow
-
-```sh
-# Preview the 41 source operations; no CAP files are changed
-./wmo-raf/addon/install.sh plan --config deployment.json
-
-# Run the national deployment safety checks
-./wmo-raf/addon/install.sh preflight --config deployment.json
-
-# Intended install interface — currently restricted to disposable tests
-./wmo-raf/addon/install.sh install --config deployment.json
-
-# Source recovery from an existing CHE journal
-./wmo-raf/addon/install.sh recover --config deployment.json
+```bash
+git clone https://github.com/matthieukohl/che-composer.git
+cd che-composer
 ```
 
-#### Current development status
+**2. Check the existing CAP Composer folder.** Run:
 
-This is a development release candidate, not a production-ready add-on.
-The installation and recovery engines currently reject operational CAP
-project paths. A successful preflight does not override this restriction.
-The complete seven-check deployment preflight has not yet been proven
-against a real national deployment.
+```bash
+./wmo-raf/addon/install.sh plan --cap-path /path/to/cap-composer
+```
 
-In tested disposable environments, installation journals all 41 operations
-before making source changes. Recovery restores the three original CAP
-configuration files and their permissions, and removes 38 CHE-created
-files if they remain unmodified. Source recovery does not require a fresh
-Docker or PostgreSQL preflight.
+Replace `/path/to/cap-composer` with the full path to your CAP Composer folder. For example, if the folder is at `/home/meteorology/cap-composer`, use that path instead.
 
-Recovery covers CHE-managed source files only; it is not a substitute for
-independently verified database backups or infrastructure recovery. Keep
-the recovery journal after an interrupted installation for review.
+The check confirms that the expected CAP Composer files are present, that the CHE files are complete, and that the changes should not conflict with existing files. **This check does not change CAP Composer.**
 
-#### Remaining requirements for production authorization
+**3. Install CHE in an approved test environment only.** Run:
 
-1. Independently authenticate and protect recovery-journal evidence.
-2. Complete interrupted-installation and recovery tests on the final build.
-3. Verify backup and restoration against a realistic Docker/PostgreSQL
-   deployment and its actual database/service identities.
-4. Review filesystem race conditions, trust boundaries, and permissions.
-5. Test country-specific CAP customizations and authorize operational
-   paths only after the deployment and recovery safety gates pass.
+```bash
+./wmo-raf/addon/install.sh install --cap-path /path/to/cap-composer
+```
 
-Do not bypass the test-workspace restriction or use this release on an
-operational CAP Composer installation.
+Replace the example path as in Step 2. The installer adds 36 CHE files, two branding files and makes three changes to CAP Composer: **41 file operations in total**.
+
+**4. Restart and check.** Rebuild and restart the existing CAP Composer application using its own Docker Compose setup. Then confirm that CHE appears in the admin interface and that existing CAP alerts are still there. Docker commands vary between installations.
+
+### Does the installer save the original files?
+
+**Yes. Before changing CAP Composer, it saves copies of the three original CAP configuration files it needs to modify.** It also records which files it adds and changes, so its recovery tool can reverse those source-file changes when safe to do so.
+
+This is **not a complete backup**. The installer does not automatically back up the CAP database, existing alerts, uploaded images or other data. Keep separate backups of those items.
+
+### What have we tested?
+
+We successfully added CHE to a fresh CAP Composer 1.3.6 test installation. We checked all 41 file changes, started CAP Composer with CHE, confirmed that the CHE database update was applied, and verified that an existing CAP alert remained exactly unchanged.
+
+### Important: test use only
+
+**The current installer only allows installation in approved disposable test environments.** It will refuse an operational national CAP Composer installation. Backup and recovery procedures and other safety checks need further testing before use on an operational system.
+
+A separate `deployment.json` option is provided for more detailed deployment safety checks. **It is not needed for the simple test installation shown above**, and does not remove the current restriction on operational installations.
 
 ## Origins and Attribution
 
