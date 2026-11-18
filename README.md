@@ -89,7 +89,7 @@ The repository is organized to support two installation approaches for each CAP 
 | Directory | Purpose | Status |
 |---|---|---|
 | `wmo-raf/combined/` | Complete WMO-RAF CAP Composer + CHE installation | Initial installation tested |
-| `wmo-raf/addon/` | CHE add-on for an existing WMO-RAF CAP Composer installation | In preparation |
+| `wmo-raf/addon/` | CHE add-on for an existing WMO-RAF CAP Composer installation | Initial installation tested (test environments only) |
 | `wmo/combined/` | Combined installation based on the alternative WMO CAP Composer repository | Planned |
 | `wmo/addon/` | CHE add-on for the alternative WMO installation | Planned |
 | `che-core/` | Shared CHE application source | Included |
@@ -185,52 +185,91 @@ Do not reuse the database volumes or runtime configuration of an existing operat
 
 ## CHE Add-On Installation
 
-CHE Composer can be added to an existing **WMO-RAF CAP Composer 1.3.6** installation. It adds CHE features to CAP Composer without replacing it.
+CHE Composer can be added to WMO-RAF CAP Composer version 1.3.6. It adds the CHE tools to the existing application without replacing CAP Composer or its alerts.
 
-### Install CHE in a test environment
+### 1. Download CHE Composer
 
-**1. Download CHE Composer.** Open Terminal and run:
+Open Terminal and run:
 
 ```bash
 git clone https://github.com/matthieukohl/che-composer.git
 cd che-composer
 ```
 
-**2. Check the existing CAP Composer folder.** Run:
+### 2. Check your CAP Composer installation
+
+Run:
 
 ```bash
 ./wmo-raf/addon/install.sh plan --cap-path /path/to/cap-composer
 ```
 
-Replace `/path/to/cap-composer` with the full path to your CAP Composer folder. For example, if the folder is at `/home/meteorology/cap-composer`, use that path instead.
+Replace `/path/to/cap-composer` with the full location of your existing CAP Composer folder. For example, if it is in `/home/meteorology/cap-composer`, run:
 
-The check confirms that the expected CAP Composer files are present, that the CHE files are complete, and that the changes should not conflict with existing files. **This check does not change CAP Composer.**
+```bash
+./wmo-raf/addon/install.sh plan --cap-path /home/meteorology/cap-composer
+```
 
-**3. Install CHE in an approved test environment only.** Run:
+This check does not change any files. It checks that the expected CAP Composer files are present, all CHE files are ready, and there are no conflicting files or unsafe locations.
+
+### 3. Install CHE in a test installation
+
+For an allowed test installation, run:
 
 ```bash
 ./wmo-raf/addon/install.sh install --cap-path /path/to/cap-composer
 ```
 
-Replace the example path as in Step 2. The installer adds 36 CHE files, two branding files and makes three changes to CAP Composer: **41 file operations in total**.
+Replace the example folder path as in Step 2.
 
-**4. Restart and check.** Rebuild and restart the existing CAP Composer application using its own Docker Compose setup. Then confirm that CHE appears in the admin interface and that existing CAP alerts are still there. Docker commands vary between installations.
+The installer makes 41 file changes:
 
-### Does the installer save the original files?
+- Adds 36 files containing the CHE features.
+- Adds two files to display the CAP + CHE Composer logo instead of the original CAP-only logo.
+- Updates three existing CAP Composer files:
+  - `config/settings/base.py` — tells CAP Composer to load CHE.
+  - `config/urls.py` — connects the CHE pages to the application.
+  - `config/templates/wagtailadmin/base.html` — adds the CHE branding to the administration interface.
 
-**Yes. Before changing CAP Composer, it saves copies of the three original CAP configuration files it needs to modify.** It also records which files it adds and changes, so its recovery tool can reverse those source-file changes when safe to do so.
+Before making those changes, the installer saves copies of the three original CAP files and records which files it adds. Its recovery tool can use this information to undo the CHE file changes, provided the files have not been changed again in a way that makes recovery unsafe.
 
-This is **not a complete backup**. The installer does not automatically back up the CAP database, existing alerts, uploaded images or other data. Keep separate backups of those items.
+### 4. Rebuild and restart CAP Composer
+
+After adding CHE, CAP Composer must load the new files. If your existing installation uses a standard Docker Compose setup, open a Terminal in the CAP Composer folder and run:
+
+```bash
+cd /path/to/cap-composer
+docker compose build
+docker compose up -d
+```
+
+Replace `/path/to/cap-composer` with your own CAP Composer folder. For example:
+
+```bash
+cd /home/meteorology/cap-composer
+docker compose build
+docker compose up -d
+```
+
+These are example commands. They work when Docker Compose is already set up in that folder. If your installation uses different Compose files or service names, use the same Docker setup you normally use to restart CAP Composer. Do not create a second database or replace your existing database.
+
+Then open your usual CAP Composer administration page. Check that CHE appears and that your existing CAP alerts are still present. Confirm that the CHE database update has been applied.
+
+### Does the installer make a backup?
+
+It saves copies of the three original CAP configuration files that it changes. This lets the recovery tool reverse the CHE source-file changes when it is safe to do so.
+
+It does not make a full system backup. In particular, it does not automatically back up CAP alerts in the database, uploaded images, or other stored data. Those need separate backups.
 
 ### What have we tested?
 
-We successfully added CHE to a fresh CAP Composer 1.3.6 test installation. We checked all 41 file changes, started CAP Composer with CHE, confirmed that the CHE database update was applied, and verified that an existing CAP alert remained exactly unchanged.
+We tested the add-on with a fresh CAP Composer 1.3.6 installation. All 41 file changes were verified. We rebuilt and started the application, confirmed CHE was loaded and its database update was applied, and checked that an existing CAP alert remained exactly unchanged.
 
-### Important: test use only
+### Important: the current release is for testing only
 
-**The current installer only allows installation in approved disposable test environments.** It will refuse an operational national CAP Composer installation. Backup and recovery procedures and other safety checks need further testing before use on an operational system.
+The installer checks the location of the CAP Composer folder before allowing changes. It accepts only specific, temporary test folders used for development and rejects ordinary operational CAP Composer folders. This prevents someone from accidentally running the current development installer on a national warning system.
 
-A separate `deployment.json` option is provided for more detailed deployment safety checks. **It is not needed for the simple test installation shown above**, and does not remove the current restriction on operational installations.
+The folder check is not proof that an installation is safe for real-world use. Full backup and recovery testing is still needed before installation on an operational system can be enabled. Do not rename or move a real national installation simply to bypass this restriction.
 
 ## Origins and Attribution
 
