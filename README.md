@@ -271,70 +271,83 @@ The installer checks the location of the CAP Composer folder before allowing cha
 
 The folder check is not proof that an installation is safe for real-world use. Full backup and recovery testing is still needed before installation on an operational system can be enabled. Do not rename or move a real national installation simply to bypass this restriction.
 
-### Add-on deployment workflow (development release candidate)
+### Where CHE Composer files are located
 
-The CHE add-on is designed for existing WMO-RAF CAP Composer v1.3.6
-installations. Unlike the combined edition described above, it adds CHE
-to an existing CAP Composer deployment through targeted changes intended
-to preserve national settings, URL registrations, and existing branding.
+The CHE add-on is added inside the existing CAP Composer application.
+The structure below shows the main files after installation:
 
-The add-on contains 36 CHE source files, two branding assets, and three
-targeted configuration patches: 41 source operations in total.
-
-#### Deployment configuration
-
-After cloning this repository, copy
-`wmo-raf/addon/deployment.example.json` to your private `deployment.json`
-and replace the placeholders with the actual CAP project path, Docker
-services, database identities, and recovery evidence paths. Do not commit
-private deployment settings, credentials, or recovery evidence to Git.
-
-#### Terminal workflow
-
-```sh
-# Preview the 41 source operations; no CAP files are changed
-./wmo-raf/addon/install.sh plan --config deployment.json
-
-# Run the national deployment safety checks
-./wmo-raf/addon/install.sh preflight --config deployment.json
-
-# Intended install interface — currently restricted to disposable tests
-./wmo-raf/addon/install.sh install --config deployment.json
-
-# Source recovery from an existing CHE journal
-./wmo-raf/addon/install.sh recover --config deployment.json
+```text
+CAP Composer folder/
+├── capcomposer/
+│   └── src/capcomposer/
+│       ├── cap/                          Existing CAP alert functions
+│       ├── che/                          New CHE events application
+│       │   ├── models.py                 Hazardous-event records
+│       │   ├── views.py                  CHE pages
+│       │   ├── urls.py                   CHE page addresses
+│       │   ├── wagtail_hooks.py          CHE administration menus
+│       │   ├── templates/                CHE page layouts
+│       │   ├── static/                   Maps and interface files
+│       │   └── migrations/               CHE database setup
+│       └── config/
+│           ├── settings/base.py          Enables CHE
+│           ├── urls.py                   Connects CHE pages
+│           └── templates/wagtailadmin/
+│               └── base.html             Updates the admin interface
+└── .che-recovery-journal/                Saved original CAP files
 ```
 
-#### Current development status
+CAP alerts and CHE events are kept separately. The installer adds 36 CHE
+files and two files for the CAP + CHE logo. It changes three existing CAP
+configuration files: `base.py` to load CHE, `urls.py` to connect its pages,
+and `wagtailadmin/base.html` to update the administration interface.
 
-This is a development release candidate, not a production-ready add-on.
-The installation and recovery engines currently reject operational CAP
-project paths. A successful preflight does not override this restriction.
-The complete seven-check deployment preflight has not yet been proven
-against a real national deployment.
+### How to remove CHE and return to CAP Composer
 
-In tested disposable environments, installation journals all 41 operations
-before making source changes. Recovery restores the three original CAP
-configuration files and their permissions, and removes 38 CHE-created
-files if they remain unmodified. Source recovery does not require a fresh
-Docker or PostgreSQL preflight.
+The installer saves copies of the three CAP configuration files it changes.
+You can use these saved copies to return to the original CAP Composer.
 
-Recovery covers CHE-managed source files only; it is not a substitute for
-independently verified database backups or infrastructure recovery. Keep
-the recovery journal after an interrupted installation for review.
+1. Open Terminal in the downloaded `che-composer` repository.
+2. Restore the original CAP files:
 
-#### Remaining requirements for production authorization
+   ```bash
+   ./wmo-raf/addon/install.sh recover --cap-path /path/to/cap-composer
+   ```
 
-1. Independently authenticate and protect recovery-journal evidence.
-2. Complete interrupted-installation and recovery tests on the final build.
-3. Verify backup and restoration against a realistic Docker/PostgreSQL
-   deployment and its actual database/service identities.
-4. Review filesystem race conditions, trust boundaries, and permissions.
-5. Test country-specific CAP customizations and authorize operational
-   paths only after the deployment and recovery safety gates pass.
+   Replace `/path/to/cap-composer` with the full path to your existing CAP
+   Composer folder.
 
-Do not bypass the test-workspace restriction or use this release on an
-operational CAP Composer installation.
+3. Go to that CAP Composer folder:
+
+   ```bash
+   cd /path/to/cap-composer
+   ```
+
+4. Rebuild CAP Composer:
+
+   ```bash
+   docker compose build
+   ```
+
+5. Restart CAP Composer:
+
+   ```bash
+   docker compose up -d
+   ```
+
+6. Open your usual CAP Composer administration page. Check that CHE menus
+   have disappeared and your existing CAP alerts are still there.
+
+Recovery restores the three original CAP configuration files and removes the
+38 CHE files added by the installer if they have not been modified. It does
+not restore databases or uploaded images from a backup.
+
+We successfully tested the complete installation and recovery process using
+an isolated WMO-RAF CAP Composer v1.3.6 installation. The original CAP alert
+and its parent list remained exactly unchanged after recovery.
+
+The current installer and recovery command are restricted to approved test
+environments; they cannot be used on operational national installations.
 
 ## Origins and Attribution
 
