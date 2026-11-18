@@ -271,6 +271,71 @@ The installer checks the location of the CAP Composer folder before allowing cha
 
 The folder check is not proof that an installation is safe for real-world use. Full backup and recovery testing is still needed before installation on an operational system can be enabled. Do not rename or move a real national installation simply to bypass this restriction.
 
+### Add-on deployment workflow (development release candidate)
+
+The CHE add-on is designed for existing WMO-RAF CAP Composer v1.3.6
+installations. Unlike the combined edition described above, it adds CHE
+to an existing CAP Composer deployment through targeted changes intended
+to preserve national settings, URL registrations, and existing branding.
+
+The add-on contains 36 CHE source files, two branding assets, and three
+targeted configuration patches: 41 source operations in total.
+
+#### Deployment configuration
+
+After cloning this repository, copy
+`wmo-raf/addon/deployment.example.json` to your private `deployment.json`
+and replace the placeholders with the actual CAP project path, Docker
+services, database identities, and recovery evidence paths. Do not commit
+private deployment settings, credentials, or recovery evidence to Git.
+
+#### Terminal workflow
+
+```sh
+# Preview the 41 source operations; no CAP files are changed
+./wmo-raf/addon/install.sh plan --config deployment.json
+
+# Run the national deployment safety checks
+./wmo-raf/addon/install.sh preflight --config deployment.json
+
+# Intended install interface — currently restricted to disposable tests
+./wmo-raf/addon/install.sh install --config deployment.json
+
+# Source recovery from an existing CHE journal
+./wmo-raf/addon/install.sh recover --config deployment.json
+```
+
+#### Current development status
+
+This is a development release candidate, not a production-ready add-on.
+The installation and recovery engines currently reject operational CAP
+project paths. A successful preflight does not override this restriction.
+The complete seven-check deployment preflight has not yet been proven
+against a real national deployment.
+
+In tested disposable environments, installation journals all 41 operations
+before making source changes. Recovery restores the three original CAP
+configuration files and their permissions, and removes 38 CHE-created
+files if they remain unmodified. Source recovery does not require a fresh
+Docker or PostgreSQL preflight.
+
+Recovery covers CHE-managed source files only; it is not a substitute for
+independently verified database backups or infrastructure recovery. Keep
+the recovery journal after an interrupted installation for review.
+
+#### Remaining requirements for production authorization
+
+1. Independently authenticate and protect recovery-journal evidence.
+2. Complete interrupted-installation and recovery tests on the final build.
+3. Verify backup and restoration against a realistic Docker/PostgreSQL
+   deployment and its actual database/service identities.
+4. Review filesystem race conditions, trust boundaries, and permissions.
+5. Test country-specific CAP customizations and authorize operational
+   paths only after the deployment and recovery safety gates pass.
+
+Do not bypass the test-workspace restriction or use this release on an
+operational CAP Composer installation.
+
 ## Origins and Attribution
 
 CHE Composer is based on the open-source WMO-RAF CAP Composer project.
