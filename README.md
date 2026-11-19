@@ -19,17 +19,6 @@ CHE records are maintained separately from CAP alerts. The extension does not ch
 
 CHE Composer is currently a functional prototype undergoing further testing for packaging and installation.
 
-The combined CAP + CHE installation based on WMO-RAF CAP Composer has been successfully tested in an isolated Docker environment, including:
-
-- Building the application and background-worker images.
-- Initializing a fresh PostgreSQL/PostGIS database.
-- Applying the CHE database migration.
-- Creating administrator accounts.
-- Accessing the administration interface.
-- Displaying the authenticated CHE Global Map.
-
-The original development prototype has also been used to test CHE catalogue functions, event relationships and transfers to a local UNDRR DELTA Resilience installation.
-
 ## Features
 
 ### Hazardous-Event Catalogue
