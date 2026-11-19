@@ -17,17 +17,18 @@ CHE records are maintained separately from CAP alerts. The extension does not ch
 
 ## Project Status
 
-**WMO RAF Standalone is the primary CHE Composer edition.**
-It has been tested locally on macOS using Docker.
+CHE Composer is currently a functional prototype undergoing packaging and installation testing.
 
-| Edition | Status | Testing |
-|---|---|---|
-| **WMO RAF Standalone** | Working prototype | **Tested locally on macOS** |
-| WMO RAF Combined | Working prototype | Tested locally |
-| WMO RAF Add-on | Working prototype | Tested locally |
-| WMO Standalone | Planned | Not yet tested |
-| WMO Combined | Planned | Not yet tested |
-| WMO Add-on | Planned | Not yet tested |
+The combined CAP + CHE installation based on WMO-RAF CAP Composer has been successfully tested in an isolated Docker environment, including:
+
+- Building the application and background-worker images.
+- Initializing a fresh PostgreSQL/PostGIS database.
+- Applying the CHE database migration.
+- Creating administrator accounts.
+- Accessing the administration interface.
+- Displaying the authenticated CHE Global Map.
+
+The original development prototype has also been used to test CHE catalogue functions, event relationships and transfers to a local UNDRR DELTA Resilience installation.
 
 ## Features
 
@@ -83,17 +84,20 @@ The original prototype has successfully transferred individual and batch events 
 
 ## Repository Structure
 
-| Folder | Edition | Status |
-|---|---|---|
-| `wmo-raf/standalone/` | **WMO RAF Standalone** | **Tested locally on macOS** |
-| `wmo-raf/combined/` | WMO RAF Combined | Tested locally |
-| `wmo-raf/addon/` | WMO RAF Add-on | Tested locally |
-| `wmo/standalone/` | WMO Standalone | Planned |
-| `wmo/combined/` | WMO Combined | Planned |
-| `wmo/addon/` | WMO Add-on | Planned |
-| `che-core/` | Shared CHE source | Included |
+The repository supports three installation approaches for each CAP Composer foundation: standalone CHE Composer, combined CAP + CHE Composer, and a CHE add-on for an existing CAP Composer installation.
 
-The WMO RAF Standalone edition is the recommended starting point.
+| Directory | Purpose | Status |
+|---|---|---|
+| `wmo-raf/standalone/` | Standalone CHE Composer based on WMO-RAF | Tested locally |
+| `wmo-raf/combined/` | Combined WMO-RAF CAP Composer + CHE installation | Tested locally |
+| `wmo-raf/addon/` | CHE add-on for an existing WMO-RAF CAP Composer installation | Tested locally |
+| `wmo/standalone/` | Future standalone CHE Composer based on WMO | Planned |
+| `wmo/combined/` | Combined installation based on WMO CAP Composer | Planned |
+| `wmo/addon/` | CHE add-on for the WMO installation | Planned |
+| `che-core/` | Shared CHE application source | Included |
+| `docs/` | Additional project documentation | In preparation |
+
+The `che-core/` directory currently contains shared source files and is not a separately installable Python package.
 
 ### Where CHE Composer files are located
 
@@ -126,35 +130,17 @@ files and two files for the CAP + CHE logo. It changes three existing CAP
 configuration files: `base.py` to load CHE, `urls.py` to connect its pages,
 and `wagtailadmin/base.html` to update the administration interface.
 
-## Installation — WMO RAF Standalone (Recommended)
+## Installation — WMO-RAF Standalone Edition
 
-**Tested locally on macOS with Docker.**
+Tested locally with Docker.
 
-1. Install Git and Docker Desktop.
-2. Clone the repository:
+1. Clone the repository and open `wmo-raf/standalone/`.
+2. Copy `.env.standalone.sample` to `.env` and set your passwords.
+3. Start: `docker compose up -d --build`
+4. Create an administrator: `docker compose exec capcomposer capcomposer createsuperuser`
+5. Open the administration page at the configured local port.
 
-   `git clone https://github.com/matthieukohl/che-composer.git`
-
-3. Open the standalone folder:
-
-   `cd che-composer/wmo-raf/standalone`
-
-4. Copy `.env.standalone.sample` to `.env` and set your
-   `SECRET_KEY`, `DB_PASSWORD` and `REDIS_PASSWORD`.
-
-5. Start the application:
-
-   `docker compose up -d --build`
-
-6. Create an administrator account:
-
-   `docker compose exec capcomposer capcomposer createsuperuser`
-
-7. Open the CHE Composer administration page at the
-   localhost port configured in `.env`.
-
-The database, passwords, backups and uploaded media stay local.
-They are **not included in the GitHub repository**.
+Databases, backups and credentials remain local.
 
 ## Installation — WMO-RAF Combined Edition
 
