@@ -17,7 +17,7 @@ CHE records are maintained separately from CAP alerts. The extension does not ch
 
 ## Project Status
 
-CHE Composer is currently a functional prototype undergoing packaging and installation testing.
+CHE Composer is currently a functional prototype undergoing further testing for packaging and installation.
 
 The combined CAP + CHE installation based on WMO-RAF CAP Composer has been successfully tested in an isolated Docker environment, including:
 
