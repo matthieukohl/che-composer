@@ -132,15 +132,80 @@ and `wagtailadmin/base.html` to update the administration interface.
 
 ## Installation — WMO-RAF Standalone Edition
 
-Tested locally with Docker.
+This installation provides CHE Composer independently of CAP Composer, with its own application and database infrastructure. It has been tested locally using Docker.
 
-1. Clone the repository and open `wmo-raf/standalone/`.
-2. Copy `.env.standalone.sample` to `.env` and set your passwords.
-3. Start: `docker compose up -d --build`
-4. Create an administrator: `docker compose exec capcomposer capcomposer createsuperuser`
-5. Open the administration page at the configured local port.
+Prerequisites:
 
-Databases, backups and credentials remain local.
+- Git.
+- Docker Desktop or Docker Engine.
+- Docker Compose.
+- Sufficient local storage for the application images and PostgreSQL database.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/matthieukohl/che-composer.git
+cd che-composer/wmo-raf/standalone
+```
+
+### 2. Create the local configuration
+
+```bash
+cp .env.standalone.sample .env
+```
+
+The standalone edition already includes `docker-compose.yml` and `nginx/nginx.conf`; you do not need to copy these from their sample files.
+
+### 3. Configure environment variables
+
+Edit `.env` and set the required values:
+
+- `SECRET_KEY`
+- `DB_PASSWORD`
+- `REDIS_PASSWORD`
+- `UID`
+- `GID`
+
+Use unique secrets and the appropriate user and group identifiers for your host environment. Review the other settings, including the web proxy port, if necessary. Do not commit `.env` or share its credentials.
+
+### 4. Create persistent storage directories
+
+```bash
+mkdir -p docker/volumes/db docker/volumes/backup docker/volumes/static docker/volumes/media
+```
+
+Ensure that the configured Docker user has appropriate write permissions to these directories. Keep the storage separate from any existing CAP Composer installation.
+
+### 5. Build and start the application
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+### 6. Check the installation
+
+```bash
+docker compose ps
+docker compose logs --tail=100
+```
+
+### 7. Create an administrator account
+
+```bash
+docker compose exec capcomposer capcomposer createsuperuser
+```
+
+### 8. Open CHE Composer
+
+For the locally tested installation using port 8085:
+
+- Administration: http://localhost:8085/admin/
+- CHE Events catalogue: http://localhost:8085/admin/che_events/
+
+If you configured another web proxy port, use that port instead. Sign in with the administrator account. CHE Events, Global Map, Network Viewer and Push to DELTA are available through the administration navigation.
+
+The standalone installation uses its own database. Local databases, backups, uploaded media and credentials are not included in the GitHub repository. A fresh installation does not contain the events from the locally tested database.
 
 ## Installation — WMO-RAF Combined Edition
 
