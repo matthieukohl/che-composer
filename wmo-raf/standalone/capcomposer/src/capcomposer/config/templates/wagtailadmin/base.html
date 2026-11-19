@@ -1,0 +1,14 @@
+{% extends "wagtailadmin/base.html" %}
+{% load static %}
+
+{% block branding_logo %}
+    <figure style="width: 120px; height: 120px; max-width: 120px;
+                   max-height: 120px; margin: 0; padding: 0;
+                   overflow: hidden;">
+        <img src="{% static 'images/che_sidebar_logo.png' %}"
+             alt="CHE Composer"
+             style="display: block; width: 120px; height: 120px;
+                    max-width: 120px; max-height: 120px;
+                    object-fit: contain;"/>
+    </figure>
+{% endblock %}

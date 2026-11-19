@@ -1,0 +1,26 @@
+services:
+  capcomposer_db:
+    container_name: chetest_combined_db
+    ports: !override []
+    command: postgres -c max_connections=100 -c shared_buffers=128MB
+
+  capcomposer_redis:
+    container_name: chetest_combined_redis
+
+  capcomposer:
+    container_name: chetest_combined_app
+    image: chetest_combined_app
+    ports: !override []
+
+  capcomposer_celery_worker:
+    container_name: chetest_combined_worker
+    image: chetest_combined_worker
+
+  capcomposer_celery_beat:
+    container_name: chetest_combined_beat
+    image: chetest_combined_beat
+
+  capcomposer_web_proxy:
+    container_name: chetest_combined_proxy
+    ports: !override
+      - "8082:80"

@@ -1,0 +1,14 @@
+{% extends "wagtailadmin/login.html" %}
+{% load static %}
+
+{% block branding_login %}
+    Sign in to CHE Composer
+{% endblock %}
+
+{% block branding_logo %}
+    <div style="display: flex; justify-content: center; margin-top: 20px">
+        <img src="{% static 'images/che_composer.png' %}"
+             alt="CHE Composer"
+             style="width: 150px; height: auto; object-fit: contain"/>
+    </div>
+{% endblock %}

@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load static wagtailcore_tags wagtailimages_tags lazyimages_tags wagtailiconchooser_tags i18n online_share %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'cap/css/bulma-timeline.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/maplibre-gl.css' %}">
+  <link rel="stylesheet" href="{% static 'cap/css/cap_detail_page.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<main>
+  {% include "breadcrumbs_include.html" %}
+
+  <section class="cap-section">
+    <div class="container">
+
+      <!-- ── NOT ACTUAL WARNING ── -->
+      {% if page.status != "Actual" %}
+        <div class="cap-status-warning">
+          <span class="cap-status-icon">{% svg_icon name="warning" %}</span>
+          <div>
+            <strong>{% trans "Warning: This is not an Actual alert" %}</strong>
+            <span>{% trans "The alert below is marked as" %} <strong>{{ page.status }}</strong> — {% trans "not actionable to the general public." %}</span>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- ── REFERENCE ALERTS ── -->
+      {% if page.reference_alerts %}
+        <div class="cap-references">
+          <p class="cap-ref-label">
+            {% if page.msgType == "Update" %}{% translate "This alert updates the previously published alerts below:" %}{% endif %}
+            {% if page.msgType == "Cancel" %}{% translate "This alert cancels the previously published alerts below:" %}{% endif %}
+          </p>
+          <div class="cap-ref-list">
+            {% for ref_alert in page.reference_alerts %}
+              {% with ref_alert.infos.0 as alert_info %}
+                <a class="cap-ref-item" href="{{ ref_alert.url }}">
+                  <span class="cap-ref-dot"
+                        style="background:{{ alert_info.severity.color }};
+                               border-color:{{ alert_info.severity.border_color }};"></span>
+                  <div>
+                    <div class="cap-ref-title">{{ ref_alert.title }}</div>
+                    <div class="cap-ref-date">{{ ref_alert.sent }}</div>
+                  </div>
+                </a>
+              {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- ── PAGE TITLE + SHARE ── -->
+      <div class="cap-page-header">
+        <div>
+          <p class="cap-page-eyebrow">{% translate "CAP Alert" %} · {{ page.status }}</p>
+          <h1 class="cap-page-title">{{ page.title }}</h1>
+        </div>
+        <div class="cap-share-row">
+          <a class="cap-share-btn" href="{{ page.xml_link }}" target="_blank" rel="noreferrer noopener">
+            <span class="icon">{% svg_icon name="cap-alert" %}</span>
+            <span>CAP XML</span>
+          </a>
+          {% if page.search_image %}
+            {% image page.search_image original as alert_png %}
+            <a class="cap-share-btn" href="{{ alert_png.url }}" target="_blank">
+              <span class="icon">{% svg_icon name="image" %}</span>
+              <span>{% translate "PNG" %}</span>
+            </a>
+          {% endif %}
+          {% if page.alert_pdf_preview %}
+            <a class="cap-share-btn" href="{{ page.alert_pdf_preview.url }}">
+              <span class="icon">{% svg_icon name="doc-full-inverse" %}</span>
+              <span>{% translate "PDF" %}</span>
+            </a>
+          {% endif %}
+          <div class="cap-share-social share-buttons">
+            {% share_buttons url=page.get_full_url text=page.title %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MAIN CARD: sidebar left, map+tabs right ── -->
+      <div class="cap-card">
+        <div class="cap-layout">
+
+          <!-- ── LEFT SIDEBAR ── -->
+          <div class="cap-sidebar">
+
+            <!-- active info severity badge — updates on tab switch -->
+            <div class="cap-sb-severity" id="cap-sb-severity">
+              {% with sorted_infos.0 as first_info %}
+                {% if first_info %}
+                  <div class="cap-sb-sev-icon"
+                       id="cap-sb-sev-icon"
+                       style="background:{{ first_info.severity.background_color }};
+                              border-color:{{ first_info.severity.border_color }};
+                              {% if first_info.severity.icon_color %}color:{{ first_info.severity.icon_color }};{% endif %}">
+                    {% if first_info.event_icon %}{% svg_icon name=first_info.event_icon %}{% endif %}
+                  </div>
+                  <div>
+                    <div class="cap-sb-sev-event" id="cap-sb-sev-event">{{ first_info.status }}: {{ first_info.event }}</div>
+                    <div class="cap-sb-sev-label" id="cap-sb-sev-label">{{ first_info.severity.label }}</div>
+                  </div>
+                {% endif %}
+              {% endwith %}
+            </div>
+
+            <!-- meta rows — static per alert, not per info -->
+            {% with sorted_infos.0 as fi %}
+              {% if fi %}
+                <div class="cap-sb-meta">
+                  <div class="cap-sb-meta-row">
+                    <span class="cap-sb-meta-icon">{% svg_icon name="time" %}</span>
+                    <span class="cap-sb-meta-lbl">{% translate "Urgency" %}</span>
+                    <span class="cap-sb-meta-val" id="cap-sb-urgency">
+                      {% with u=fi.info.value.urgency %}
+                        {% if u == "Immediate" %}{% translate "Immediate" %}
+                        {% elif u == "Expected" %}{% translate "Expected" %}
+                        {% elif u == "Future" %}{% translate "Future" %}
+                        {% elif u == "Past" %}{% translate "Past" %}
+                        {% endif %}
+                      {% endwith %}
+                    </span>
+                  </div>
+                  <div class="cap-sb-meta-row">
+                    <span class="cap-sb-meta-icon">{% svg_icon name="warning" %}</span>
+                    <span class="cap-sb-meta-lbl">{% translate "Severity" %}</span>
+                    <span class="cap-sb-meta-val" id="cap-sb-severity-val">
+                      {% with s=fi.info.value.severity %}
+                        {% if s == "Extreme" %}{% translate "Extreme" %}
+                        {% elif s == "Severe" %}{% translate "Severe" %}
+                        {% elif s == "Moderate" %}{% translate "Moderate" %}
+                        {% elif s == "Minor" %}{% translate "Minor" %}
+                        {% endif %}
+                      {% endwith %}
+                    </span>
+                  </div>
+                  <div class="cap-sb-meta-row">
+                    <span class="cap-sb-meta-icon">{% svg_icon name="crosshairs" %}</span>
+                    <span class="cap-sb-meta-lbl">{% translate "Certainty" %}</span>
+                    <span class="cap-sb-meta-val" id="cap-sb-certainty">
+                      {% with c=fi.info.value.certainty %}
+                        {% if c == "Observed" %}{% translate "Observed" %}
+                        {% elif c == "Likely" %}{% translate "Likely" %}
+                        {% elif c == "Possible" %}{% translate "Possible" %}
+                        {% elif c == "Unlikely" %}{% translate "Unlikely" %}
+                        {% endif %}
+                      {% endwith %}
+                    </span>
+                  </div>
+                  <div class="cap-sb-meta-row">
+                    <span class="cap-sb-meta-icon">{% svg_icon name="cap-category" %}</span>
+                    <span class="cap-sb-meta-lbl">{% translate "Category" %}</span>
+                    <span class="cap-sb-meta-val" id="cap-sb-category">{{ fi.category }}</span>
+                  </div>
+                  <div class="cap-sb-meta-row">
+                    <span class="cap-sb-meta-icon">{% svg_icon name="cap-language" %}</span>
+                    <span class="cap-sb-meta-lbl">{% translate "Language" %}</span>
+                    <span class="cap-sb-meta-val" id="cap-sb-language">{{ fi.info.value.language }}</span>
+                  </div>
+                </div>
+
+                <!-- timeline -->
+                <div class="cap-sb-section">
+                  <div class="cap-sb-section-title">{% translate "Time period" %}</div>
+                  <ul class="cap-sb-timeline" id="cap-sb-timeline">
+                    <li class="cap-sb-tl-item">
+                      <div class="cap-sb-tl-dot"></div>
+                      <div>
+                        <span class="cap-sb-tl-type">{% translate "Issued" %}</span>
+                        <span class="cap-sb-tl-val">{{ page.sent|date:"d M Y H:i" }}</span>
+                      </div>
+                    </li>
+                    <li class="cap-sb-tl-item">
+                      <div class="cap-sb-tl-dot"></div>
+                      <div>
+                        <span class="cap-sb-tl-type">{% translate "Effective" %}</span>
+                        <span class="cap-sb-tl-val">
+                          {% if fi.info.value.effective %}{{ fi.info.value.effective|date:"d M Y H:i" }}
+                          {% else %}{{ page.sent|date:"d M Y H:i" }}{% endif %}
+                        </span>
+                      </div>
+                    </li>
+                    {% if fi.info.value.onset %}
+                      <li class="cap-sb-tl-item">
+                        <div class="cap-sb-tl-dot"></div>
+                        <div>
+                          <span class="cap-sb-tl-type">{% translate "Onset" %}</span>
+                          <span class="cap-sb-tl-val">{{ fi.info.value.onset|date:"d M Y H:i" }}</span>
+                        </div>
+                      </li>
+                    {% endif %}
+                    <li class="cap-sb-tl-item">
+                      <div class="cap-sb-tl-dot"></div>
+                      <div>
+                        <span class="cap-sb-tl-type">{% translate "Expires" %}</span>
+                        <span class="cap-sb-tl-val">{{ fi.info.value.expires|date:"d M Y H:i" }}</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <!-- legend -->
+            <div class="cap-sb-section">
+              <div class="cap-sb-section-title">{% translate "Severity" %}</div>
+              <div class="cap-sb-legend">
+                <div class="cap-sb-legend-item"><span class="cap-sb-legend-dot" style="background:#d42d41;"></span><span>{% translate "Extreme" %}</span></div>
+                <div class="cap-sb-legend-item"><span class="cap-sb-legend-dot" style="background:#f08c11;"></span><span>{% translate "Severe" %}</span></div>
+                <div class="cap-sb-legend-item"><span class="cap-sb-legend-dot" style="background:#f4cf00;"></span><span>{% translate "Moderate" %}</span></div>
+                <div class="cap-sb-legend-item"><span class="cap-sb-legend-dot" style="background:#399cc7;"></span><span>{% translate "Minor" %}</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── RIGHT: MAP + TABS + CONTENT ── -->
+          <div class="cap-right">
+
+            <!-- MAP -->
+            <div class="cap-map-wrap">
+              <div id="cap-map" class="cap-map"></div>
+            </div>
+
+            <!-- UNDERLINE EVENT TABS -->
+            {% if sorted_infos|length > 0 %}
+              <div class="cap-tab-strip" id="cap-tab-strip">
+                {% for item in sorted_infos %}
+                  <button class="cap-tab {% if forloop.first %}active{% endif %}"
+                          data-target="{{ item.info.id }}"
+                          data-event="{{ item.event }}"
+                          data-status="{{ item.status }}"
+                          data-sev-label="{{ item.severity.label }}"
+                          data-sev-bg="{{ item.severity.background_color }}"
+                          data-sev-border="{{ item.severity.border_color }}"
+                          data-sev-icon-color="{{ item.severity.icon_color }}"
+                          data-urgency="{{ item.info.value.urgency }}"
+                          data-severity="{{ item.info.value.severity }}"
+                          data-certainty="{{ item.info.value.certainty }}"
+                          data-category="{{ item.category }}"
+                          data-language="{{ item.info.value.language }}"
+                          data-event-icon="{{ item.event_icon }}">
+                    {% if item.event_icon %}
+                      <span class="cap-tab-icon"
+                            style="background:{{ item.severity.background_color }};
+                                   {% if item.severity.icon_color %}color:{{ item.severity.icon_color }};{% endif %}">
+                        {% svg_icon name=item.event_icon %}
+                      </span>
+                    {% else %}
+                      <span class="cap-tab-dot"
+                            style="background:{{ item.severity.color }};"></span>
+                    {% endif %}
+                    <span class="cap-tab-label">{{ item.event|truncatechars:40 }} ({{ item.info.value.language }})</span>
+                  </button>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <!-- TAB CONTENT PANELS -->
+              
+              <div class="cap-right-content">
+                {% for alert_info in sorted_infos %}
+                  {% with item=alert_info.info %}
+                  <div dir="{%if item.value.language|slice:":2" == "ar" %}rtl{% endif %}">
+                    <div class="cap-detail-panel {% if not forloop.first %}is-hidden{% endif %}"
+                        id="{{ alert_info.info.id }}">
+
+                      <!-- headline -->
+                      {% if item.value.headline %}
+                        <h2 class="cap-detail-headline">{{ item.value.headline }}</h2>
+                      {% endif %}
+
+                      <!-- response types -->
+                      {% if item.value.responseType %}
+                        <div class="cap-detail-section">
+                          <div class="cap-detail-section-title">{% translate "Response" %}</div>
+                          <p class="cap-detail-text">
+                            {% for r in item.value.responseType %}
+                              {% with rt=r.response_type %}
+                                {% if rt == "Shelter" %}{% translate "Shelter" %}
+                                {% elif rt == "Evacuate" %}{% translate "Evacuate" %}
+                                {% elif rt == "Prepare" %}{% translate "Prepare" %}
+                                {% elif rt == "Execute" %}{% translate "Execute" %}
+                                {% elif rt == "Avoid" %}{% translate "Avoid" %}
+                                {% elif rt == "Monitor" %}{% translate "Monitor" %}
+                                {% elif rt == "Assess" %}{% translate "Assess" %}
+                                {% elif rt == "AllClear" %}{% translate "All Clear" %}
+                                {% elif rt == "None" %}{% translate "None" %}
+                                {% endif %}
+                              {% endwith %}
+                              {% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                          </p>
+                        </div>
+                      {% endif %}
+
+                      <!-- area -->
+                      <div class="cap-detail-section">
+                        <div class="cap-detail-section-title">{% translate "Area" %}</div>
+
+                        
+                            <p class="cap-detail-text">
+                                {% for area in item.value.area %}
+                                {% if not forloop.first %},{% endif %}
+                                {% if area.block_type == "predefined_block" %}{{ area.value.area }}{% else %}{{area.value.areaDesc }}
+                                {% endif %}                                                        
+                                {% endfor %}
+
+                            </p>
+
+                      </div>
+
+                      <!-- description -->
+                      <div class="cap-detail-section">
+                        <div class="cap-detail-section-title">{% translate "Event description" %}</div>
+                        <p class="cap-detail-text">{{ item.value.description }}</p>
+                      </div>
+
+                      <!-- instructions -->
+                      {% if item.value.instruction %}
+                        <div class="cap-detail-section">
+                          <div class="cap-detail-section-title">{% translate "Instructions" %}</div>
+                          <p class="cap-detail-text">{{ item.value.instruction }}</p>
+                        </div>
+                      {% endif %}
+
+                      <!-- hidden severity icon for map markers -->
+                      <div class="cap-severity-icon is-hidden"
+                          data-infoid="{{ alert_info.info.id }}"
+                          style="background:{{ alert_info.severity.background_color }};
+                                  {% if alert_info.severity.icon_color %}color:{{ alert_info.severity.icon_color }};{% endif %}">
+                        {% if alert_info.event_icon %}{% svg_icon name=alert_info.event_icon %}{% endif %}
+                      </div>
+
+                    </div>
+                    </div>
+                  {% endwith %}
+                {% endfor %}
+              </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script type="text/javascript" src="{% static 'js/maplibre-gl.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/turf.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const tabs         = document.querySelectorAll('.cap-tab');
+  const detailPanels = document.querySelectorAll('.cap-detail-panel');
+
+  /* sidebar elements */
+  const sbSevIcon    = document.getElementById('cap-sb-sev-icon');
+  const sbSevEvent   = document.getElementById('cap-sb-sev-event');
+  const sbSevLabel   = document.getElementById('cap-sb-sev-label');
+  const sbUrgency    = document.getElementById('cap-sb-urgency');
+  const sbSeverity   = document.getElementById('cap-sb-severity-val');
+  const sbCertainty  = document.getElementById('cap-sb-certainty');
+  const sbCategory   = document.getElementById('cap-sb-category');
+  const sbLanguage   = document.getElementById('cap-sb-language');
+
+  const urgencyMap   = { Immediate: "{% translate 'Immediate' %}", Expected: "{% translate 'Expected' %}", Future: "{% translate 'Future' %}", Past: "{% translate 'Past' %}" };
+  const severityMap  = { Extreme: "{% translate 'Extreme' %}", Severe: "{% translate 'Severe' %}", Moderate: "{% translate 'Moderate' %}", Minor: "{% translate 'Minor' %}" };
+  const certaintyMap = { Observed: "{% translate 'Observed' %}", Likely: "{% translate 'Likely' %}", Possible: "{% translate 'Possible' %}", Unlikely: "{% translate 'Unlikely' %}" };
+
+  let initialFilter;
+  let map;
+
+  const activateTab = (tab) => {
+    tabs.forEach(t => t.classList.remove('active'));
+    detailPanels.forEach(p => p.classList.add('is-hidden'));
+    tab.classList.add('active');
+
+    const target = tab.dataset.target;
+    const panel  = document.getElementById(target);
+    if (panel) panel.classList.remove('is-hidden');
+
+    /* update sidebar */
+    const d = tab.dataset;
+    if (sbSevEvent)  sbSevEvent.textContent  = d.status + ': ' + d.event;
+    if (sbSevLabel)  sbSevLabel.textContent  = d.sevLabel;
+    if (sbSevIcon) {
+      sbSevIcon.style.background   = d.sevBg;
+      sbSevIcon.style.borderColor  = d.sevBorder;
+      sbSevIcon.style.color        = d.sevIconColor || '';
+    }
+    if (sbUrgency)   sbUrgency.textContent   = urgencyMap[d.urgency]   || d.urgency;
+    if (sbSeverity)  sbSeverity.textContent  = severityMap[d.severity]  || d.severity;
+    if (sbCertainty) sbCertainty.textContent = certaintyMap[d.certainty] || d.certainty;
+    if (sbCategory)  sbCategory.textContent  = d.category;
+    if (sbLanguage)  sbLanguage.textContent  = d.language;
+
+    /* update map filter */
+    if (map) map.setFilter('alert-areas-layer', ['==', 'info-id', target]);
+  };
+
+  tabs.forEach(tab => tab.addEventListener('click', () => activateTab(tab)));
+
+  const firstTab = document.querySelector('.cap-tab.active');
+  if (firstTab) initialFilter = ['==', 'info-id', firstTab.dataset.target];
+
+  /* ── MAP ── */
+  const geojson = {{ page.geojson|safe }};
+  const bounds  = {{ page.bounds|safe }};
+
+  const defaultStyle = "https://tiles.openfreemap.org/styles/positron";
+
+  map = new maplibregl.Map({
+    container: "cap-map",
+    style: defaultStyle,
+    center: [0, 0],
+    zoom: 2,
+    scrollZoom: false,
+  });
+
+  map.addControl(new maplibregl.NavigationControl({
+    visualizePitch: true, showZoom: true, showCompass: true,
+  }), 'bottom-right');
+
+  map.on("load", () => {
+    map.addSource("alert-areas", { type: "geojson", data: geojson });
+
+    map.addLayer({
+      id: "alert-areas-layer",
+      type: "fill",
+      source: "alert-areas",
+      filter: initialFilter || undefined,
+      paint: {
+        "fill-color": [
+          "case",
+          ["==", ["get", "severity"], "Extreme"],  "#d42d41",
+          ["==", ["get", "severity"], "Severe"],   "#f08c11",
+          ["==", ["get", "severity"], "Moderate"], "#f4cf00",
+          ["==", ["get", "severity"], "Minor"],    "#399cc7",
+          ["==", ["get", "severity"], "Unknown"],  "#82a8df",
+          "black",
+        ],
+        "fill-opacity": 1,
+        "fill-outline-color": "#000",
+      },
+    });
+
+    if (bounds) {
+      map.fitBounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]], { padding: 30 });
+    }
+
+    /* markers */
+    geojson.features.forEach(feature => {
+      const centroid = turf.centroid(feature);
+      const infoId   = feature.properties['info-id'];
+      const iconWrap = document.querySelector(`.cap-severity-icon[data-infoid="${infoId}"]`);
+      if (!iconWrap) return;
+      const svg = iconWrap.querySelector('svg');
+      if (!svg) return;
+      const el = document.createElement('div');
+      el.className = 'cap-event-marker';
+      el.innerHTML = svg.outerHTML;
+      el.style.backgroundColor = iconWrap.style.backgroundColor;
+      new maplibregl.Marker({ element: el })
+        .setLngLat(centroid.geometry.coordinates)
+        .addTo(map);
+    });
+
+    map.on("mouseenter", "alert-areas-layer", () => map.getCanvas().style.cursor = "pointer");
+    map.on("mouseleave", "alert-areas-layer", () => map.getCanvas().style.cursor = "");
+  });
+
+});
+</script>
+{% endblock extra_js %}

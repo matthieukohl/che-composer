@@ -1,0 +1,22 @@
+# Only the standalone foundation and shared CHE source enter this build.
+**
+!wmo-raf/
+!wmo-raf/standalone/
+!wmo-raf/standalone/capcomposer/
+!wmo-raf/standalone/capcomposer/**
+!che-core/
+!che-core/**
+
+# Never include private or generated files.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.sqlite3
+**/*.dump
+**/*.sql
+**/__pycache__/
+**/.git/
+**/media/
+**/backup/
+**/docker/volumes/
